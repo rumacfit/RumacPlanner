@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily Planner</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📅</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -561,6 +562,135 @@
             color: white;
         }
 
+        /* Calendar Views */
+        .calendar-container {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .calendar-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--color-border);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .calendar-day-header {
+            background: var(--color-bg);
+            padding: 0.75rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--color-text-secondary);
+        }
+
+        .calendar-day {
+            background: var(--color-surface);
+            padding: 0.75rem;
+            min-height: 100px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .calendar-day:hover {
+            background: var(--color-bg);
+        }
+
+        .calendar-day.other-month {
+            opacity: 0.3;
+        }
+
+        .calendar-day.today {
+            background: var(--color-primary-light);
+        }
+
+        .calendar-day-number {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .calendar-event {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            background: var(--color-work-light);
+            border-left: 2px solid var(--color-work);
+            border-radius: 0.25rem;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .year-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+        }
+
+        .mini-month {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+
+        .mini-month-title {
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            text-align: center;
+        }
+
+        .mini-month-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+
+        .mini-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            border-radius: 0.25rem;
+        }
+
+        .mini-day.has-events {
+            background: var(--color-work-light);
+            color: var(--color-work);
+            font-weight: 600;
+        }
+
+        .mini-day.today {
+            background: var(--color-primary);
+            color: white;
+            font-weight: 600;
+        }
+
         /* Responsive */
         @media (max-width: 1400px) {
             .client-grid {
@@ -596,7 +726,7 @@
         function DailyPlanner() {
             // State
             const [currentUser, setCurrentUser] = useState(() => {
-                return localStorage.getItem('currentUser') || 'macca';
+                return localStorage.getItem('currentUser') || 'both';
             });
             const [mode, setMode] = useState('daily');
             
@@ -614,6 +744,8 @@
             const [newTask, setNewTask] = useState({ title: '', priority: false });
             const [showAddClientModal, setShowAddClientModal] = useState(false);
             const [newClient, setNewClient] = useState({ name: '', week: 0 });
+            const [currentMonth, setCurrentMonth] = useState(new Date());
+            const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
             // Data structure
             const getDefaultWeekData = () => ({
@@ -631,10 +763,16 @@
                 return saved ? JSON.parse(saved) : getDefaultWeekData();
             });
 
-            // Client data with automation
+            // Universal client data (shared across users)
             const [clientData, setClientData] = useState(() => {
-                const saved = localStorage.getItem(`clients_${currentUser}`);
+                const saved = localStorage.getItem('clients_universal');
                 return saved ? JSON.parse(saved) : { clients: [] };
+            });
+
+            // Universal calendar data for monthly/yearly
+            const [calendarData, setCalendarData] = useState(() => {
+                const saved = localStorage.getItem('calendar_universal');
+                return saved ? JSON.parse(saved) : { events: [] };
             });
 
             // Auto-calculate client weeks based on start date (for display purposes)
@@ -661,20 +799,43 @@
 
             // Save data
             useEffect(() => {
-                localStorage.setItem(`planner_${currentUser}`, JSON.stringify(weekData));
+                if (currentUser !== 'both') {
+                    localStorage.setItem(`planner_${currentUser}`, JSON.stringify(weekData));
+                }
             }, [weekData, currentUser]);
 
             useEffect(() => {
-                localStorage.setItem(`clients_${currentUser}`, JSON.stringify(clientData));
-            }, [clientData, currentUser]);
+                localStorage.setItem('clients_universal', JSON.stringify(clientData));
+            }, [clientData]);
+
+            useEffect(() => {
+                localStorage.setItem('calendar_universal', JSON.stringify(calendarData));
+            }, [calendarData]);
 
             // Load data on user change
             useEffect(() => {
-                const saved = localStorage.getItem(`planner_${currentUser}`);
-                setWeekData(saved ? JSON.parse(saved) : getDefaultWeekData());
-                
-                const savedClients = localStorage.getItem(`clients_${currentUser}`);
-                setClientData(savedClients ? JSON.parse(savedClients) : { clients: [] });
+                if (currentUser === 'both') {
+                    // Load combined data from both users
+                    const maccaData = localStorage.getItem('planner_macca');
+                    const rubyData = localStorage.getItem('planner_ruby');
+                    
+                    const macca = maccaData ? JSON.parse(maccaData) : getDefaultWeekData();
+                    const ruby = rubyData ? JSON.parse(rubyData) : getDefaultWeekData();
+                    
+                    // Merge the data
+                    const combined = {};
+                    Object.keys(macca).forEach(day => {
+                        combined[day] = {
+                            events: [...(macca[day]?.events || []), ...(ruby[day]?.events || [])],
+                            tasks: [...(macca[day]?.tasks || []), ...(ruby[day]?.tasks || [])]
+                        };
+                    });
+                    
+                    setWeekData(combined);
+                } else {
+                    const saved = localStorage.getItem(`planner_${currentUser}`);
+                    setWeekData(saved ? JSON.parse(saved) : getDefaultWeekData());
+                }
             }, [currentUser]);
 
             // Helper functions
@@ -739,6 +900,8 @@
             };
 
             const toggleTaskComplete = (taskId) => {
+                if (currentUser === 'both') return; // Can't edit in combined view
+                
                 setWeekData(prev => ({
                     ...prev,
                     [dataIndex]: {
@@ -829,15 +992,30 @@
                         <div className="user-toggle">
                             <button 
                                 className={`user-btn ${currentUser === 'macca' ? 'active' : ''}`}
-                                onClick={() => setCurrentUser('macca')}
+                                onClick={() => {
+                                    setCurrentUser('macca');
+                                    localStorage.setItem('currentUser', 'macca');
+                                }}
                             >
                                 Macca
                             </button>
                             <button 
                                 className={`user-btn ${currentUser === 'ruby' ? 'active' : ''}`}
-                                onClick={() => setCurrentUser('ruby')}
+                                onClick={() => {
+                                    setCurrentUser('ruby');
+                                    localStorage.setItem('currentUser', 'ruby');
+                                }}
                             >
                                 Ruby
+                            </button>
+                            <button 
+                                className={`user-btn ${currentUser === 'both' ? 'active' : ''}`}
+                                onClick={() => {
+                                    setCurrentUser('both');
+                                    localStorage.setItem('currentUser', 'both');
+                                }}
+                            >
+                                Both
                             </button>
                         </div>
                     </div>
@@ -895,9 +1073,11 @@
                                 <div className="panel">
                                     <div className="panel-header">
                                         <h3 className="panel-title">{dayNames[selectedDay]}'s Schedule</h3>
-                                        <button className="btn btn-secondary" onClick={() => setShowAddEventModal(true)}>
-                                            + Event
-                                        </button>
+                                        {currentUser !== 'both' && (
+                                            <button className="btn btn-secondary" onClick={() => setShowAddEventModal(true)}>
+                                                + Event
+                                            </button>
+                                        )}
                                     </div>
                                     <div className="panel-body">
                                         {currentDayData.events.length > 0 ? (
@@ -920,9 +1100,11 @@
                                 <div className="panel">
                                     <div className="panel-header">
                                         <h3 className="panel-title">Tasks</h3>
-                                        <button className="btn btn-secondary" onClick={() => setShowAddTaskModal(true)}>
-                                            + Task
-                                        </button>
+                                        {currentUser !== 'both' && (
+                                            <button className="btn btn-secondary" onClick={() => setShowAddTaskModal(true)}>
+                                                + Task
+                                            </button>
+                                        )}
                                     </div>
                                     <div className="panel-body">
                                         {priorityTasks.length > 0 && (
@@ -990,16 +1172,180 @@
 
                     {/* Monthly View */}
                     {mode === 'monthly' && (
-                        <div className="empty-state" style={{padding: '4rem 1rem'}}>
-                            Monthly view coming soon
+                        <div className="calendar-container">
+                            <div className="calendar-header">
+                                <h2 className="calendar-title">
+                                    {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                                </h2>
+                                <div className="calendar-nav">
+                                    <button 
+                                        className="btn btn-secondary"
+                                        onClick={() => {
+                                            const newMonth = new Date(currentMonth);
+                                            newMonth.setMonth(newMonth.getMonth() - 1);
+                                            setCurrentMonth(newMonth);
+                                        }}
+                                    >
+                                        ←
+                                    </button>
+                                    <button 
+                                        className="btn btn-secondary"
+                                        onClick={() => setCurrentMonth(new Date())}
+                                    >
+                                        Today
+                                    </button>
+                                    <button 
+                                        className="btn btn-secondary"
+                                        onClick={() => {
+                                            const newMonth = new Date(currentMonth);
+                                            newMonth.setMonth(newMonth.getMonth() + 1);
+                                            setCurrentMonth(newMonth);
+                                        }}
+                                    >
+                                        →
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="month-grid">
+                                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                                    <div key={day} className="calendar-day-header">{day}</div>
+                                ))}
+                                
+                                {(() => {
+                                    const year = currentMonth.getFullYear();
+                                    const month = currentMonth.getMonth();
+                                    const firstDay = new Date(year, month, 1).getDay();
+                                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                                    const daysInPrevMonth = new Date(year, month, 0).getDate();
+                                    
+                                    const days = [];
+                                    const today = new Date();
+                                    
+                                    // Previous month days
+                                    for (let i = firstDay - 1; i >= 0; i--) {
+                                        days.push(
+                                            <div key={`prev-${i}`} className="calendar-day other-month">
+                                                <div className="calendar-day-number">{daysInPrevMonth - i}</div>
+                                            </div>
+                                        );
+                                    }
+                                    
+                                    // Current month days
+                                    for (let day = 1; day <= daysInMonth; day++) {
+                                        const isToday = today.getDate() === day && 
+                                                       today.getMonth() === month && 
+                                                       today.getFullYear() === year;
+                                        
+                                        days.push(
+                                            <div 
+                                                key={`current-${day}`} 
+                                                className={`calendar-day ${isToday ? 'today' : ''}`}
+                                            >
+                                                <div className="calendar-day-number">{day}</div>
+                                            </div>
+                                        );
+                                    }
+                                    
+                                    // Next month days
+                                    const remainingDays = 42 - days.length;
+                                    for (let i = 1; i <= remainingDays; i++) {
+                                        days.push(
+                                            <div key={`next-${i}`} className="calendar-day other-month">
+                                                <div className="calendar-day-number">{i}</div>
+                                            </div>
+                                        );
+                                    }
+                                    
+                                    return days;
+                                })()}
+                            </div>
                         </div>
                     )}
 
                     {/* Yearly View */}
                     {mode === 'yearly' && (
-                        <div className="empty-state" style={{padding: '4rem 1rem'}}>
-                            Yearly view coming soon
-                        </div>
+                        <>
+                            <div className="section-header">
+                                <h2 className="section-title">{currentYear}</h2>
+                                <div style={{display: 'flex', gap: '0.5rem'}}>
+                                    <button 
+                                        className="btn btn-secondary"
+                                        onClick={() => setCurrentYear(currentYear - 1)}
+                                    >
+                                        ← {currentYear - 1}
+                                    </button>
+                                    <button 
+                                        className="btn btn-secondary"
+                                        onClick={() => setCurrentYear(new Date().getFullYear())}
+                                    >
+                                        Today
+                                    </button>
+                                    <button 
+                                        className="btn btn-secondary"
+                                        onClick={() => setCurrentYear(currentYear + 1)}
+                                    >
+                                        {currentYear + 1} →
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="year-grid">
+                                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(monthIndex => {
+                                    const monthDate = new Date(currentYear, monthIndex, 1);
+                                    const monthName = monthDate.toLocaleDateString('en-US', { month: 'long' });
+                                    const firstDay = monthDate.getDay();
+                                    const daysInMonth = new Date(currentYear, monthIndex + 1, 0).getDate();
+                                    
+                                    const today = new Date();
+                                    const isCurrentMonth = today.getMonth() === monthIndex && today.getFullYear() === currentYear;
+                                    
+                                    return (
+                                        <div key={monthIndex} className="mini-month">
+                                            <div className="mini-month-title">{monthName}</div>
+                                            <div className="mini-month-grid">
+                                                {/* Day headers */}
+                                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                                                    <div key={`header-${i}`} style={{
+                                                        fontSize: '0.625rem',
+                                                        color: 'var(--color-text-secondary)',
+                                                        textAlign: 'center',
+                                                        fontWeight: '600'
+                                                    }}>
+                                                        {d}
+                                                    </div>
+                                                ))}
+                                                
+                                                {/* Empty cells for alignment */}
+                                                {Array.from({length: firstDay}, (_, i) => (
+                                                    <div key={`empty-${i}`}></div>
+                                                ))}
+                                                
+                                                {/* Days */}
+                                                {Array.from({length: daysInMonth}, (_, i) => {
+                                                    const day = i + 1;
+                                                    const isToday = isCurrentMonth && today.getDate() === day;
+                                                    
+                                                    return (
+                                                        <div 
+                                                            key={day} 
+                                                            className={`mini-day ${isToday ? 'today' : ''}`}
+                                                            onClick={() => {
+                                                                setMode('monthly');
+                                                                setCurrentMonth(new Date(currentYear, monthIndex, day));
+                                                            }}
+                                                            style={{cursor: 'pointer'}}
+                                                        >
+                                                            {day}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </>
                     )}
 
                     {/* Client Tracker */}

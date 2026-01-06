@@ -293,16 +293,6 @@
             background: var(--color-bg);
         }
 
-        .event-item.work {
-            border-color: var(--color-work);
-            background: var(--color-work-light);
-        }
-
-        .event-item.training {
-            border-color: var(--color-training);
-            background: var(--color-training-light);
-        }
-
         .event-time {
             font-size: 0.75rem;
             font-weight: 600;
@@ -454,7 +444,105 @@
             justify-content: flex-end;
         }
 
-        .form-group {
+        /* Calendar Event Modal Styles */
+        .modal-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-section-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .checkbox-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0;
+            cursor: pointer;
+        }
+
+        .checkbox-option input[type="checkbox"] {
+            width: 1.125rem;
+            height: 1.125rem;
+            cursor: pointer;
+        }
+
+        .user-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+        }
+
+        .user-option:hover {
+            background: var(--color-bg);
+        }
+
+        .user-option.selected {
+            background: var(--color-primary-light);
+            border-color: var(--color-primary);
+        }
+
+        .user-avatar {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .user-avatar.macca {
+            background: #0891b2;
+        }
+
+        .user-avatar.ruby {
+            background: #ea580c;
+        }
+
+        .user-name {
+            font-weight: 500;
+        }
+
+        .color-picker {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.5rem;
+        }
+
+        .color-option {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: var(--transition);
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border-color: var(--color-text);
+            box-shadow: var(--shadow-md);
+        }
+
+        .show-in-options {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        /* Form Groups */
             display: flex;
             flex-direction: column;
             gap: 1rem;
@@ -740,12 +828,43 @@
             const [showAddTaskModal, setShowAddTaskModal] = useState(false);
             const [showImportModal, setShowImportModal] = useState(false);
             const [importText, setImportText] = useState('');
-            const [newEvent, setNewEvent] = useState({ time: '', title: '', detail: '', type: 'work' });
-            const [newTask, setNewTask] = useState({ title: '', priority: false });
+            const [newEvent, setNewEvent] = useState({ 
+                startTime: '', 
+                endTime: '',
+                title: '', 
+                detail: '', 
+                color: '#0891b2',
+                assignedTo: currentUser === 'both' ? ['macca', 'ruby'] : [currentUser]
+            });
+            const [newTask, setNewTask] = useState({ 
+                title: '', 
+                priority: false,
+                assignedTo: currentUser === 'both' ? ['macca', 'ruby'] : [currentUser]
+            });
             const [showAddClientModal, setShowAddClientModal] = useState(false);
             const [newClient, setNewClient] = useState({ name: '', week: 0 });
             const [currentMonth, setCurrentMonth] = useState(new Date());
             const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+            
+            // Edit states
+            const [editingEvent, setEditingEvent] = useState(null);
+            const [editingTask, setEditingTask] = useState(null);
+            
+            // Calendar event modal
+            const [showCalendarEventModal, setShowCalendarEventModal] = useState(false);
+            const [newCalendarEvent, setNewCalendarEvent] = useState({
+                title: '',
+                startDate: new Date().toISOString().split('T')[0],
+                endDate: '',
+                hasEndDate: false,
+                startTime: '',
+                hasStartTime: false,
+                location: '',
+                assignedTo: ['macca', 'ruby'], // Both by default
+                showInDaily: true,
+                showInMonthly: true,
+                description: ''
+            });
 
             // Data structure
             const getDefaultWeekData = () => ({
@@ -855,48 +974,202 @@
             };
 
             const dataIndex = getDataIndex(selectedDay);
+            
+            // Filter events and tasks based on current user
             const currentDayData = weekData[dataIndex] || { events: [], tasks: [] };
-            const priorityTasks = currentDayData.tasks.filter(t => t.priority && !t.completed);
-            const regularTasks = currentDayData.tasks.filter(t => !t.priority && !t.completed);
-            const completedTasks = currentDayData.tasks.filter(t => t.completed);
+            const filteredEvents = currentUser === 'both' 
+                ? currentDayData.events 
+                : currentDayData.events.filter(e => e.assignedTo?.includes(currentUser));
+            const filteredTasks = currentUser === 'both'
+                ? currentDayData.tasks
+                : currentDayData.tasks.filter(t => t.assignedTo?.includes(currentUser));
+            
+            const priorityTasks = filteredTasks.filter(t => t.priority && !t.completed);
+            const regularTasks = filteredTasks.filter(t => !t.priority && !t.completed);
+            const completedTasks = filteredTasks.filter(t => t.completed);
+            
+            // Color options for events
+            const colorOptions = [
+                { color: '#0891b2', name: 'Cyan' },
+                { color: '#ea580c', name: 'Orange' },
+                { color: '#8b5cf6', name: 'Purple' },
+                { color: '#22c55e', name: 'Green' },
+                { color: '#ef4444', name: 'Red' },
+                { color: '#f59e0b', name: 'Amber' },
+                { color: '#ec4899', name: 'Pink' },
+                { color: '#06b6d4', name: 'Sky' },
+                { color: '#84cc16', name: 'Lime' },
+                { color: '#6366f1', name: 'Indigo' },
+                { color: '#a855f7', name: 'Violet' },
+                { color: '#14b8a6', name: 'Teal' }
+            ];
+            
+            const openEditEvent = (event) => {
+                setEditingEvent(event);
+                setNewEvent({
+                    startTime: event.startTime,
+                    endTime: event.endTime || '',
+                    title: event.title,
+                    detail: event.detail || '',
+                    color: event.color || '#0891b2',
+                    assignedTo: event.assignedTo || [currentUser]
+                });
+                setShowAddEventModal(true);
+            };
+            
+            const openEditTask = (task) => {
+                setEditingTask(task);
+                setNewTask({
+                    title: task.title,
+                    priority: task.priority,
+                    assignedTo: task.assignedTo || [currentUser]
+                });
+                setShowAddTaskModal(true);
+            };
+            
+            const toggleEventUserAssignment = (userId) => {
+                setNewEvent(prev => {
+                    const assigned = prev.assignedTo.includes(userId);
+                    return {
+                        ...prev,
+                        assignedTo: assigned 
+                            ? prev.assignedTo.filter(id => id !== userId)
+                            : [...prev.assignedTo, userId]
+                    };
+                });
+            };
+            
+            const toggleTaskUserAssignment = (userId) => {
+                setNewTask(prev => {
+                    const assigned = prev.assignedTo.includes(userId);
+                    return {
+                        ...prev,
+                        assignedTo: assigned 
+                            ? prev.assignedTo.filter(id => id !== userId)
+                            : [...prev.assignedTo, userId]
+                    };
+                });
+            };
 
             // Event handlers
             const handleAddEvent = () => {
-                if (!newEvent.time || !newEvent.title) return;
+                if (!newEvent.startTime || !newEvent.title) return;
+                if (currentUser === 'both') return; // Can't add in combined view
                 
-                setWeekData(prev => ({
-                    ...prev,
-                    [dataIndex]: {
-                        ...prev[dataIndex],
-                        events: [...(prev[dataIndex].events || []), {
-                            id: Date.now(),
-                            ...newEvent
-                        }]
-                    }
-                }));
+                const dataIndex = getDataIndex(selectedDay);
                 
-                setNewEvent({ time: '', title: '', detail: '', type: 'work' });
+                if (editingEvent) {
+                    // Update existing event
+                    setWeekData(prev => ({
+                        ...prev,
+                        [dataIndex]: {
+                            ...prev[dataIndex],
+                            events: prev[dataIndex].events.map(e =>
+                                e.id === editingEvent.id ? { ...newEvent, id: e.id } : e
+                            )
+                        }
+                    }));
+                    setEditingEvent(null);
+                } else {
+                    // Add new event
+                    setWeekData(prev => ({
+                        ...prev,
+                        [dataIndex]: {
+                            ...prev[dataIndex],
+                            events: [...(prev[dataIndex].events || []), {
+                                id: Date.now(),
+                                ...newEvent
+                            }]
+                        }
+                    }));
+                }
+                
+                setNewEvent({ 
+                    startTime: '', 
+                    endTime: '',
+                    title: '', 
+                    detail: '', 
+                    color: '#0891b2',
+                    assignedTo: currentUser === 'both' ? ['macca', 'ruby'] : [currentUser]
+                });
                 setShowAddEventModal(false);
+            };
+
+            const handleDeleteEvent = (eventId) => {
+                if (currentUser === 'both') return;
+                const dataIndex = getDataIndex(selectedDay);
+                
+                if (confirm('Delete this event?')) {
+                    setWeekData(prev => ({
+                        ...prev,
+                        [dataIndex]: {
+                            ...prev[dataIndex],
+                            events: prev[dataIndex].events.filter(e => e.id !== eventId)
+                        }
+                    }));
+                    setShowAddEventModal(false);
+                    setEditingEvent(null);
+                }
             };
 
             const handleAddTask = () => {
                 if (!newTask.title) return;
+                if (currentUser === 'both') return; // Can't add in combined view
                 
-                setWeekData(prev => ({
-                    ...prev,
-                    [dataIndex]: {
-                        ...prev[dataIndex],
-                        tasks: [...(prev[dataIndex].tasks || []), {
-                            id: Date.now(),
-                            title: newTask.title,
-                            completed: false,
-                            priority: newTask.priority
-                        }]
-                    }
-                }));
+                const dataIndex = getDataIndex(selectedDay);
                 
-                setNewTask({ title: '', priority: false });
+                if (editingTask) {
+                    // Update existing task
+                    setWeekData(prev => ({
+                        ...prev,
+                        [dataIndex]: {
+                            ...prev[dataIndex],
+                            tasks: prev[dataIndex].tasks.map(t =>
+                                t.id === editingTask.id ? { ...newTask, id: t.id, completed: t.completed } : t
+                            )
+                        }
+                    }));
+                    setEditingTask(null);
+                } else {
+                    // Add new task
+                    setWeekData(prev => ({
+                        ...prev,
+                        [dataIndex]: {
+                            ...prev[dataIndex],
+                            tasks: [...(prev[dataIndex].tasks || []), {
+                                id: Date.now(),
+                                title: newTask.title,
+                                completed: false,
+                                priority: newTask.priority,
+                                assignedTo: newTask.assignedTo
+                            }]
+                        }
+                    }));
+                }
+                
+                setNewTask({ 
+                    title: '', 
+                    priority: false,
+                    assignedTo: currentUser === 'both' ? ['macca', 'ruby'] : [currentUser]
+                });
                 setShowAddTaskModal(false);
+            };
+
+            const handleDeleteTask = (taskId) => {
+                if (currentUser === 'both') return;
+                const dataIndex = getDataIndex(selectedDay);
+                
+                if (confirm('Delete this task?')) {
+                    setWeekData(prev => ({
+                        ...prev,
+                        [dataIndex]: {
+                            ...prev[dataIndex],
+                            tasks: prev[dataIndex].tasks.filter(t => t.id !== taskId)
+                        }
+                    }));
+                    setShowAddTaskModal(false);
+                    setEditingTask(null);
+                }
             };
 
             const toggleTaskComplete = (taskId) => {
@@ -968,6 +1241,56 @@
                 setWeekData(newData);
                 setImportText('');
                 setShowImportModal(false);
+            };
+
+            const handleAddCalendarEvent = () => {
+                if (!newCalendarEvent.title || !newCalendarEvent.startDate) return;
+
+                const event = {
+                    id: Date.now(),
+                    ...newCalendarEvent,
+                    createdAt: new Date().toISOString()
+                };
+
+                setCalendarData(prev => ({
+                    events: [...prev.events, event]
+                }));
+
+                // Reset form
+                setNewCalendarEvent({
+                    title: '',
+                    startDate: new Date().toISOString().split('T')[0],
+                    endDate: '',
+                    hasEndDate: false,
+                    startTime: '',
+                    hasStartTime: false,
+                    location: '',
+                    assignedTo: ['macca', 'ruby'],
+                    showInDaily: true,
+                    showInMonthly: true,
+                    description: ''
+                });
+                setShowCalendarEventModal(false);
+            };
+
+            const openCalendarEventModal = (date) => {
+                setNewCalendarEvent(prev => ({
+                    ...prev,
+                    startDate: date
+                }));
+                setShowCalendarEventModal(true);
+            };
+
+            const toggleUserAssignment = (userId) => {
+                setNewCalendarEvent(prev => {
+                    const assigned = prev.assignedTo.includes(userId);
+                    return {
+                        ...prev,
+                        assignedTo: assigned 
+                            ? prev.assignedTo.filter(id => id !== userId)
+                            : [...prev.assignedTo, userId]
+                    };
+                });
             };
 
             return (
@@ -1080,13 +1403,34 @@
                                         )}
                                     </div>
                                     <div className="panel-body">
-                                        {currentDayData.events.length > 0 ? (
+                                        {filteredEvents.length > 0 ? (
                                             <div className="timeline">
-                                                {currentDayData.events.sort((a, b) => a.time.localeCompare(b.time)).map(event => (
-                                                    <div key={event.id} className={`event-item ${event.type}`}>
-                                                        <div className="event-time">{event.time}</div>
+                                                {filteredEvents.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || '')).map(event => (
+                                                    <div 
+                                                        key={event.id} 
+                                                        className="event-item"
+                                                        style={{
+                                                            borderColor: event.color || '#0891b2',
+                                                            background: `${event.color || '#0891b2'}15`,
+                                                            cursor: currentUser !== 'both' ? 'pointer' : 'default'
+                                                        }}
+                                                        onClick={() => currentUser !== 'both' && openEditEvent(event)}
+                                                    >
+                                                        <div className="event-time">
+                                                            {event.startTime}
+                                                            {event.endTime && ` - ${event.endTime}`}
+                                                        </div>
                                                         <div className="event-title">{event.title}</div>
                                                         {event.detail && <div className="event-detail">{event.detail}</div>}
+                                                        {event.assignedTo && event.assignedTo.length > 0 && (
+                                                            <div style={{
+                                                                fontSize: '0.75rem',
+                                                                color: 'var(--color-text-secondary)',
+                                                                marginTop: '0.25rem'
+                                                            }}>
+                                                                {event.assignedTo.map(u => u.charAt(0).toUpperCase() + u.slice(1)).join(', ')}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>
@@ -1112,13 +1456,36 @@
                                                 <div className="priority-label">Priority Tasks</div>
                                                 <div className="task-list">
                                                     {priorityTasks.map(task => (
-                                                        <div key={task.id} className="task-item">
+                                                        <div 
+                                                            key={task.id} 
+                                                            className="task-item"
+                                                            style={{cursor: currentUser !== 'both' ? 'pointer' : 'default'}}
+                                                            onClick={(e) => {
+                                                                if (currentUser !== 'both' && !e.target.classList.contains('task-checkbox')) {
+                                                                    openEditTask(task);
+                                                                }
+                                                            }}
+                                                        >
                                                             <div 
                                                                 className={`task-checkbox ${task.completed ? 'checked' : ''}`}
-                                                                onClick={() => toggleTaskComplete(task.id)}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    toggleTaskComplete(task.id);
+                                                                }}
                                                             />
-                                                            <div className={`task-title ${task.completed ? 'completed' : ''}`}>
-                                                                {task.title}
+                                                            <div style={{flex: 1}}>
+                                                                <div className={`task-title ${task.completed ? 'completed' : ''}`}>
+                                                                    {task.title}
+                                                                </div>
+                                                                {task.assignedTo && task.assignedTo.length > 0 && (
+                                                                    <div style={{
+                                                                        fontSize: '0.75rem',
+                                                                        color: 'var(--color-text-secondary)',
+                                                                        marginTop: '0.125rem'
+                                                                    }}>
+                                                                        {task.assignedTo.map(u => u.charAt(0).toUpperCase() + u.slice(1)).join(', ')}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     ))}
@@ -1129,13 +1496,36 @@
                                         {regularTasks.length > 0 && (
                                             <div className="task-list">
                                                 {regularTasks.map(task => (
-                                                    <div key={task.id} className="task-item">
+                                                    <div 
+                                                        key={task.id} 
+                                                        className="task-item"
+                                                        style={{cursor: currentUser !== 'both' ? 'pointer' : 'default'}}
+                                                        onClick={(e) => {
+                                                            if (currentUser !== 'both' && !e.target.classList.contains('task-checkbox')) {
+                                                                openEditTask(task);
+                                                            }
+                                                        }}
+                                                    >
                                                         <div 
                                                             className={`task-checkbox ${task.completed ? 'checked' : ''}`}
-                                                            onClick={() => toggleTaskComplete(task.id)}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                toggleTaskComplete(task.id);
+                                                            }}
                                                         />
-                                                        <div className={`task-title ${task.completed ? 'completed' : ''}`}>
-                                                            {task.title}
+                                                        <div style={{flex: 1}}>
+                                                            <div className={`task-title ${task.completed ? 'completed' : ''}`}>
+                                                                {task.title}
+                                                            </div>
+                                                            {task.assignedTo && task.assignedTo.length > 0 && (
+                                                                <div style={{
+                                                                    fontSize: '0.75rem',
+                                                                    color: 'var(--color-text-secondary)',
+                                                                    marginTop: '0.125rem'
+                                                                }}>
+                                                                    {task.assignedTo.map(u => u.charAt(0).toUpperCase() + u.slice(1)).join(', ')}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 ))}
@@ -1153,12 +1543,35 @@
                                                 </div>
                                                 <div className="task-list">
                                                     {completedTasks.map(task => (
-                                                        <div key={task.id} className="task-item">
+                                                        <div 
+                                                            key={task.id} 
+                                                            className="task-item"
+                                                            style={{cursor: currentUser !== 'both' ? 'pointer' : 'default'}}
+                                                            onClick={(e) => {
+                                                                if (currentUser !== 'both' && !e.target.classList.contains('task-checkbox')) {
+                                                                    openEditTask(task);
+                                                                }
+                                                            }}
+                                                        >
                                                             <div 
                                                                 className="task-checkbox checked"
-                                                                onClick={() => toggleTaskComplete(task.id)}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    toggleTaskComplete(task.id);
+                                                                }}
                                                             />
-                                                            <div className="task-title completed">{task.title}</div>
+                                                            <div style={{flex: 1}}>
+                                                                <div className="task-title completed">{task.title}</div>
+                                                                {task.assignedTo && task.assignedTo.length > 0 && (
+                                                                    <div style={{
+                                                                        fontSize: '0.75rem',
+                                                                        color: 'var(--color-text-secondary)',
+                                                                        marginTop: '0.125rem'
+                                                                    }}>
+                                                                        {task.assignedTo.map(u => u.charAt(0).toUpperCase() + u.slice(1)).join(', ')}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -1177,33 +1590,41 @@
                                 <h2 className="calendar-title">
                                     {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                                 </h2>
-                                <div className="calendar-nav">
+                                <div style={{display: 'flex', gap: '0.75rem', alignItems: 'center'}}>
                                     <button 
-                                        className="btn btn-secondary"
-                                        onClick={() => {
-                                            const newMonth = new Date(currentMonth);
-                                            newMonth.setMonth(newMonth.getMonth() - 1);
-                                            setCurrentMonth(newMonth);
-                                        }}
+                                        className="btn btn-primary"
+                                        onClick={() => openCalendarEventModal(new Date().toISOString().split('T')[0])}
                                     >
-                                        ←
+                                        + Add Event
                                     </button>
-                                    <button 
-                                        className="btn btn-secondary"
-                                        onClick={() => setCurrentMonth(new Date())}
-                                    >
-                                        Today
-                                    </button>
-                                    <button 
-                                        className="btn btn-secondary"
-                                        onClick={() => {
-                                            const newMonth = new Date(currentMonth);
-                                            newMonth.setMonth(newMonth.getMonth() + 1);
-                                            setCurrentMonth(newMonth);
-                                        }}
-                                    >
-                                        →
-                                    </button>
+                                    <div className="calendar-nav">
+                                        <button 
+                                            className="btn btn-secondary"
+                                            onClick={() => {
+                                                const newMonth = new Date(currentMonth);
+                                                newMonth.setMonth(newMonth.getMonth() - 1);
+                                                setCurrentMonth(newMonth);
+                                            }}
+                                        >
+                                            ←
+                                        </button>
+                                        <button 
+                                            className="btn btn-secondary"
+                                            onClick={() => setCurrentMonth(new Date())}
+                                        >
+                                            Today
+                                        </button>
+                                        <button 
+                                            className="btn btn-secondary"
+                                            onClick={() => {
+                                                const newMonth = new Date(currentMonth);
+                                                newMonth.setMonth(newMonth.getMonth() + 1);
+                                                setCurrentMonth(newMonth);
+                                            }}
+                                        >
+                                            →
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1237,12 +1658,35 @@
                                                        today.getMonth() === month && 
                                                        today.getFullYear() === year;
                                         
+                                        const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                                        
+                                        // Filter events for this day
+                                        const dayEvents = calendarData.events.filter(event => {
+                                            if (!event.showInMonthly) return false;
+                                            
+                                            const eventStart = event.startDate;
+                                            const eventEnd = event.hasEndDate ? event.endDate : event.startDate;
+                                            
+                                            return dateStr >= eventStart && dateStr <= eventEnd;
+                                        });
+                                        
                                         days.push(
                                             <div 
                                                 key={`current-${day}`} 
                                                 className={`calendar-day ${isToday ? 'today' : ''}`}
+                                                onClick={() => openCalendarEventModal(dateStr)}
                                             >
                                                 <div className="calendar-day-number">{day}</div>
+                                                {dayEvents.slice(0, 3).map(event => (
+                                                    <div key={event.id} className="calendar-event">
+                                                        {event.hasStartTime && event.startTime ? `${event.startTime} ` : ''}{event.title}
+                                                    </div>
+                                                ))}
+                                                {dayEvents.length > 3 && (
+                                                    <div style={{fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '0.25rem'}}>
+                                                        +{dayEvents.length - 3} more
+                                                    </div>
+                                                )}
                                             </div>
                                         );
                                     }
@@ -1268,7 +1712,13 @@
                         <>
                             <div className="section-header">
                                 <h2 className="section-title">{currentYear}</h2>
-                                <div style={{display: 'flex', gap: '0.5rem'}}>
+                                <div style={{display: 'flex', gap: '0.75rem'}}>
+                                    <button 
+                                        className="btn btn-primary"
+                                        onClick={() => openCalendarEventModal(new Date().toISOString().split('T')[0])}
+                                    >
+                                        + Add Event
+                                    </button>
                                     <button 
                                         className="btn btn-secondary"
                                         onClick={() => setCurrentYear(currentYear - 1)}
@@ -1326,10 +1776,19 @@
                                                     const day = i + 1;
                                                     const isToday = isCurrentMonth && today.getDate() === day;
                                                     
+                                                    // Check if day has events
+                                                    const dateStr = `${currentYear}-${(monthIndex + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                                                    const hasEvents = calendarData.events.some(event => {
+                                                        if (!event.showInMonthly) return false;
+                                                        const eventStart = event.startDate;
+                                                        const eventEnd = event.hasEndDate ? event.endDate : event.startDate;
+                                                        return dateStr >= eventStart && dateStr <= eventEnd;
+                                                    });
+                                                    
                                                     return (
                                                         <div 
                                                             key={day} 
-                                                            className={`mini-day ${isToday ? 'today' : ''}`}
+                                                            className={`mini-day ${isToday ? 'today' : ''} ${hasEvents ? 'has-events' : ''}`}
                                                             onClick={() => {
                                                                 setMode('monthly');
                                                                 setCurrentMonth(new Date(currentYear, monthIndex, day));
@@ -1468,19 +1927,18 @@
 
                     {/* Add Event Modal */}
                     {showAddEventModal && (
-                        <div className="modal-overlay" onClick={() => setShowAddEventModal(false)}>
-                            <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-overlay" onClick={() => {
+                            setShowAddEventModal(false);
+                            setEditingEvent(null);
+                        }}>
+                            <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '600px'}}>
                                 <div className="modal-header">
-                                    <h3 className="modal-title">Add Event</h3>
+                                    <h3 className="modal-title">{editingEvent ? 'Edit Event' : 'Add Event'}</h3>
                                 </div>
                                 <div className="modal-body">
-                                    <div className="form-group">
-                                        <input
-                                            type="time"
-                                            className="form-input"
-                                            value={newEvent.time}
-                                            onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
-                                        />
+                                    {/* Event Title */}
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Event Title</label>
                                         <input
                                             type="text"
                                             className="form-input"
@@ -1488,26 +1946,101 @@
                                             value={newEvent.title}
                                             onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
                                         />
+                                    </div>
+
+                                    {/* Time Range */}
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Time</label>
+                                        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem'}}>
+                                            <div>
+                                                <label style={{fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem', display: 'block'}}>Start Time</label>
+                                                <input
+                                                    type="time"
+                                                    className="form-input"
+                                                    value={newEvent.startTime}
+                                                    onChange={(e) => setNewEvent({...newEvent, startTime: e.target.value})}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem', display: 'block'}}>End Time (optional)</label>
+                                                <input
+                                                    type="time"
+                                                    className="form-input"
+                                                    value={newEvent.endTime}
+                                                    onChange={(e) => setNewEvent({...newEvent, endTime: e.target.value})}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Color Picker */}
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Color</label>
+                                        <div className="color-picker">
+                                            {colorOptions.map(opt => (
+                                                <div
+                                                    key={opt.color}
+                                                    className={`color-option ${newEvent.color === opt.color ? 'selected' : ''}`}
+                                                    style={{backgroundColor: opt.color}}
+                                                    onClick={() => setNewEvent({...newEvent, color: opt.color})}
+                                                    title={opt.name}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Details */}
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Details (optional)</label>
                                         <input
                                             type="text"
                                             className="form-input"
-                                            placeholder="Details (optional)"
+                                            placeholder="Additional details"
                                             value={newEvent.detail}
                                             onChange={(e) => setNewEvent({...newEvent, detail: e.target.value})}
                                         />
-                                        <select
-                                            className="form-select"
-                                            value={newEvent.type}
-                                            onChange={(e) => setNewEvent({...newEvent, type: e.target.value})}
-                                        >
-                                            <option value="work">Work</option>
-                                            <option value="training">Training</option>
-                                        </select>
+                                    </div>
+
+                                    {/* Assign To */}
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Assign To</label>
+                                        <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
+                                            <div 
+                                                className={`user-option ${newEvent.assignedTo.includes('macca') ? 'selected' : ''}`}
+                                                onClick={() => toggleEventUserAssignment('macca')}
+                                            >
+                                                <div className="user-avatar macca">M</div>
+                                                <span className="user-name">Macca</span>
+                                            </div>
+                                            <div 
+                                                className={`user-option ${newEvent.assignedTo.includes('ruby') ? 'selected' : ''}`}
+                                                onClick={() => toggleEventUserAssignment('ruby')}
+                                            >
+                                                <div className="user-avatar ruby">R</div>
+                                                <span className="user-name">Ruby</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="modal-footer">
-                                    <button className="btn btn-secondary" onClick={() => setShowAddEventModal(false)}>Cancel</button>
-                                    <button className="btn btn-primary" onClick={handleAddEvent}>Add Event</button>
+                                    {editingEvent && (
+                                        <button 
+                                            className="btn btn-secondary" 
+                                            style={{marginRight: 'auto', background: '#ef4444', color: 'white'}}
+                                            onClick={() => handleDeleteEvent(editingEvent.id)}
+                                        >
+                                            Delete
+                                        </button>
+                                    )}
+                                    <button className="btn btn-secondary" onClick={() => {
+                                        setShowAddEventModal(false);
+                                        setEditingEvent(null);
+                                    }}>
+                                        Cancel
+                                    </button>
+                                    <button className="btn btn-primary" onClick={handleAddEvent}>
+                                        {editingEvent ? 'Save Changes' : 'Add Event'}
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1515,13 +2048,18 @@
 
                     {/* Add Task Modal */}
                     {showAddTaskModal && (
-                        <div className="modal-overlay" onClick={() => setShowAddTaskModal(false)}>
-                            <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-overlay" onClick={() => {
+                            setShowAddTaskModal(false);
+                            setEditingTask(null);
+                        }}>
+                            <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '600px'}}>
                                 <div className="modal-header">
-                                    <h3 className="modal-title">Add Task</h3>
+                                    <h3 className="modal-title">{editingTask ? 'Edit Task' : 'Add Task'}</h3>
                                 </div>
                                 <div className="modal-body">
-                                    <div className="form-group">
+                                    {/* Task Description */}
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Task Description</label>
                                         <input
                                             type="text"
                                             className="form-input"
@@ -1529,7 +2067,11 @@
                                             value={newTask.title}
                                             onChange={(e) => setNewTask({...newTask, title: e.target.value})}
                                         />
-                                        <label className="form-checkbox-group">
+                                    </div>
+
+                                    {/* Priority Checkbox */}
+                                    <div className="modal-section">
+                                        <label className="checkbox-option">
                                             <input
                                                 type="checkbox"
                                                 checked={newTask.priority}
@@ -1538,10 +2080,47 @@
                                             <span>Mark as priority</span>
                                         </label>
                                     </div>
+
+                                    {/* Assign To */}
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Assign To</label>
+                                        <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
+                                            <div 
+                                                className={`user-option ${newTask.assignedTo.includes('macca') ? 'selected' : ''}`}
+                                                onClick={() => toggleTaskUserAssignment('macca')}
+                                            >
+                                                <div className="user-avatar macca">M</div>
+                                                <span className="user-name">Macca</span>
+                                            </div>
+                                            <div 
+                                                className={`user-option ${newTask.assignedTo.includes('ruby') ? 'selected' : ''}`}
+                                                onClick={() => toggleTaskUserAssignment('ruby')}
+                                            >
+                                                <div className="user-avatar ruby">R</div>
+                                                <span className="user-name">Ruby</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="modal-footer">
-                                    <button className="btn btn-secondary" onClick={() => setShowAddTaskModal(false)}>Cancel</button>
-                                    <button className="btn btn-primary" onClick={handleAddTask}>Add Task</button>
+                                    {editingTask && (
+                                        <button 
+                                            className="btn btn-secondary" 
+                                            style={{marginRight: 'auto', background: '#ef4444', color: 'white'}}
+                                            onClick={() => handleDeleteTask(editingTask.id)}
+                                        >
+                                            Delete
+                                        </button>
+                                    )}
+                                    <button className="btn btn-secondary" onClick={() => {
+                                        setShowAddTaskModal(false);
+                                        setEditingTask(null);
+                                    }}>
+                                        Cancel
+                                    </button>
+                                    <button className="btn btn-primary" onClick={handleAddTask}>
+                                        {editingTask ? 'Save Changes' : 'Add Task'}
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1631,6 +2210,159 @@
                                         setNewClient({ name: '', week: 0 });
                                     }}>
                                         Add Client
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Calendar Event Modal */}
+                    {showCalendarEventModal && (
+                        <div className="modal-overlay" onClick={() => setShowCalendarEventModal(false)}>
+                            <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '600px'}}>
+                                <div className="modal-header">
+                                    <h3 className="modal-title">Add Event</h3>
+                                </div>
+                                <div className="modal-body">
+                                    {/* Event Title */}
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Event Title</label>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            placeholder="Event title"
+                                            value={newCalendarEvent.title}
+                                            onChange={(e) => setNewCalendarEvent({...newCalendarEvent, title: e.target.value})}
+                                        />
+                                    </div>
+
+                                    {/* Start Date */}
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Start Date</label>
+                                        <input
+                                            type="date"
+                                            className="form-input"
+                                            value={newCalendarEvent.startDate}
+                                            onChange={(e) => setNewCalendarEvent({...newCalendarEvent, startDate: e.target.value})}
+                                        />
+                                    </div>
+
+                                    {/* Add End Date Checkbox */}
+                                    <div className="modal-section">
+                                        <label className="checkbox-option">
+                                            <input
+                                                type="checkbox"
+                                                checked={newCalendarEvent.hasEndDate}
+                                                onChange={(e) => setNewCalendarEvent({...newCalendarEvent, hasEndDate: e.target.checked})}
+                                            />
+                                            <span>Add end date (multi-day event)</span>
+                                        </label>
+                                        {newCalendarEvent.hasEndDate && (
+                                            <input
+                                                type="date"
+                                                className="form-input"
+                                                style={{marginTop: '0.5rem'}}
+                                                value={newCalendarEvent.endDate}
+                                                onChange={(e) => setNewCalendarEvent({...newCalendarEvent, endDate: e.target.value})}
+                                            />
+                                        )}
+                                    </div>
+
+                                    {/* Add Start Time Checkbox */}
+                                    <div className="modal-section">
+                                        <label className="checkbox-option">
+                                            <input
+                                                type="checkbox"
+                                                checked={newCalendarEvent.hasStartTime}
+                                                onChange={(e) => setNewCalendarEvent({...newCalendarEvent, hasStartTime: e.target.checked})}
+                                            />
+                                            <span>Add start time</span>
+                                        </label>
+                                        {newCalendarEvent.hasStartTime && (
+                                            <input
+                                                type="time"
+                                                className="form-input"
+                                                style={{marginTop: '0.5rem'}}
+                                                value={newCalendarEvent.startTime}
+                                                onChange={(e) => setNewCalendarEvent({...newCalendarEvent, startTime: e.target.value})}
+                                            />
+                                        )}
+                                    </div>
+
+                                    {/* Location */}
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Location</label>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            placeholder="Location (optional)"
+                                            value={newCalendarEvent.location}
+                                            onChange={(e) => setNewCalendarEvent({...newCalendarEvent, location: e.target.value})}
+                                        />
+                                    </div>
+
+                                    {/* Assign To */}
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Assign To</label>
+                                        <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
+                                            <div 
+                                                className={`user-option ${newCalendarEvent.assignedTo.includes('macca') ? 'selected' : ''}`}
+                                                onClick={() => toggleUserAssignment('macca')}
+                                            >
+                                                <div className="user-avatar macca">M</div>
+                                                <span className="user-name">Macca</span>
+                                            </div>
+                                            <div 
+                                                className={`user-option ${newCalendarEvent.assignedTo.includes('ruby') ? 'selected' : ''}`}
+                                                onClick={() => toggleUserAssignment('ruby')}
+                                            >
+                                                <div className="user-avatar ruby">R</div>
+                                                <span className="user-name">Ruby</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Show In */}
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Show In</label>
+                                        <div className="show-in-options">
+                                            <label className="checkbox-option">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={newCalendarEvent.showInDaily}
+                                                    onChange={(e) => setNewCalendarEvent({...newCalendarEvent, showInDaily: e.target.checked})}
+                                                />
+                                                <span>Daily & Weekly</span>
+                                            </label>
+                                            <label className="checkbox-option">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={newCalendarEvent.showInMonthly}
+                                                    onChange={(e) => setNewCalendarEvent({...newCalendarEvent, showInMonthly: e.target.checked})}
+                                                />
+                                                <span>Monthly & Yearly</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {/* Description */}
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Description</label>
+                                        <textarea
+                                            className="form-textarea"
+                                            placeholder="Description (optional)"
+                                            value={newCalendarEvent.description}
+                                            onChange={(e) => setNewCalendarEvent({...newCalendarEvent, description: e.target.value})}
+                                            style={{minHeight: '100px'}}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="modal-footer">
+                                    <button className="btn btn-secondary" onClick={() => setShowCalendarEventModal(false)}>
+                                        Cancel
+                                    </button>
+                                    <button className="btn btn-primary" onClick={handleAddCalendarEvent}>
+                                        Add Event
                                     </button>
                                 </div>
                             </div>

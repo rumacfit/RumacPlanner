@@ -489,7 +489,7 @@
         /* Client Tracker */
         .client-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(6, 1fr);
             gap: 1rem;
             margin-top: 1.5rem;
         }
@@ -511,6 +511,12 @@
             color: var(--color-text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.05em;
+        }
+
+        .week-header.weekly-clients {
+            background: var(--color-primary-light);
+            color: var(--color-primary);
+            border-bottom: 2px solid var(--color-primary);
         }
 
         .week-body {
@@ -556,12 +562,15 @@
         }
 
         /* Responsive */
+        @media (max-width: 1400px) {
+            .client-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
         @media (max-width: 1200px) {
             .week-grid {
                 grid-template-columns: repeat(4, 1fr);
-            }
-            .client-grid {
-                grid-template-columns: repeat(2, 1fr);
             }
         }
 
@@ -603,6 +612,8 @@
             const [importText, setImportText] = useState('');
             const [newEvent, setNewEvent] = useState({ time: '', title: '', detail: '', type: 'work' });
             const [newTask, setNewTask] = useState({ title: '', priority: false });
+            const [showAddClientModal, setShowAddClientModal] = useState(false);
+            const [newClient, setNewClient] = useState({ name: '', week: 0 });
 
             // Data structure
             const getDefaultWeekData = () => ({
@@ -620,11 +631,33 @@
                 return saved ? JSON.parse(saved) : getDefaultWeekData();
             });
 
-            // Client data
+            // Client data with automation
             const [clientData, setClientData] = useState(() => {
                 const saved = localStorage.getItem(`clients_${currentUser}`);
                 return saved ? JSON.parse(saved) : { clients: [] };
             });
+
+            // Auto-calculate client weeks based on start date (for display purposes)
+            const getClientCurrentWeek = (startDate) => {
+                if (!startDate) return 0;
+                const start = new Date(startDate);
+                const now = new Date();
+                const daysDiff = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+                
+                // If start date is in the future, return 0 (Starting Next Week)
+                if (daysDiff < 0) return 0;
+                
+                const weekNum = Math.floor(daysDiff / 7) + 1;
+                return Math.min(weekNum, 4); // Cap at week 4
+            };
+
+            const getClientDayNumber = (startDate) => {
+                if (!startDate) return 0;
+                const start = new Date(startDate);
+                const now = new Date();
+                const daysDiff = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+                return Math.max(daysDiff + 1, 0); // Day 0, 1, 2, etc.
+            };
 
             // Save data
             useEffect(() => {
@@ -974,56 +1007,97 @@
                         <>
                             <div className="section-header">
                                 <h2 className="section-title">Client Tracker - 4 Week Test ($29)</h2>
-                                <button className="btn btn-primary" onClick={() => {
-                                    const name = prompt('Client name:');
-                                    if (name) {
-                                        setClientData(prev => ({
-                                            clients: [...prev.clients, {
-                                                id: Date.now(),
-                                                name: name,
-                                                week: 1,
-                                                status: 'active'
-                                            }]
-                                        }));
-                                    }
-                                }}>
+                                <button className="btn btn-primary" onClick={() => setShowAddClientModal(true)}>
                                     + Add Client
                                 </button>
                             </div>
 
                             <div className="client-grid">
-                                {[1, 2, 3, 4].map(week => {
-                                    const weekClients = clientData.clients.filter(c => c.week === week && c.status === 'active');
+                                {[0, 1, 2, 3, 4, 5].map(week => {
+                                    const weekClients = clientData.clients
+                                        .filter(c => c.status === 'active' && c.week === week);
+                                    
+                                    const weekLabels = {
+                                        0: 'Starting Next Week',
+                                        1: 'Week 1',
+                                        2: 'Week 2',
+                                        3: 'Week 3',
+                                        4: 'Week 4',
+                                        5: 'Weekly Clients'
+                                    };
                                     
                                     return (
                                         <div key={week} className="week-column">
-                                            <div className="week-header">Week {week}</div>
+                                            <div className={`week-header ${week === 5 ? 'weekly-clients' : ''}`}>
+                                                {weekLabels[week]}
+                                            </div>
                                             <div className="week-body">
                                                 {weekClients.length > 0 ? (
                                                     weekClients.map(client => (
                                                         <div key={client.id} className="client-card">
-                                                            <span className="client-name">{client.name}</span>
+                                                            <div style={{flex: 1}}>
+                                                                <div className="client-name">{client.name}</div>
+                                                                {week >= 1 && week <= 4 && client.startDate && (
+                                                                    <div style={{
+                                                                        fontSize: '0.75rem',
+                                                                        color: 'var(--color-text-secondary)',
+                                                                        marginTop: '0.25rem'
+                                                                    }}>
+                                                                        Day {getClientDayNumber(client.startDate)} of 28
+                                                                    </div>
+                                                                )}
+                                                                {week === 0 && client.startDate && (
+                                                                    <div style={{
+                                                                        fontSize: '0.75rem',
+                                                                        color: 'var(--color-text-secondary)',
+                                                                        marginTop: '0.25rem'
+                                                                    }}>
+                                                                        Starts {new Date(client.startDate).toLocaleDateString()}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                             <div className="client-actions">
-                                                                {week < 4 && (
+                                                                {/* Backward arrow */}
+                                                                {week > 0 && (
                                                                     <button 
                                                                         className="icon-btn"
                                                                         onClick={() => {
                                                                             setClientData(prev => ({
+                                                                                ...prev,
                                                                                 clients: prev.clients.map(c => 
-                                                                                    c.id === client.id ? {...c, week: c.week + 1} : c
+                                                                                    c.id === client.id ? {...c, week: Math.max(c.week - 1, 0)} : c
                                                                                 )
                                                                             }));
                                                                         }}
-                                                                        title="Move to next week"
+                                                                        title="Move back one week"
+                                                                    >
+                                                                        ←
+                                                                    </button>
+                                                                )}
+                                                                {/* Forward arrow */}
+                                                                {week < 5 && (
+                                                                    <button 
+                                                                        className="icon-btn"
+                                                                        onClick={() => {
+                                                                            setClientData(prev => ({
+                                                                                ...prev,
+                                                                                clients: prev.clients.map(c => 
+                                                                                    c.id === client.id ? {...c, week: Math.min(c.week + 1, 5)} : c
+                                                                                )
+                                                                            }));
+                                                                        }}
+                                                                        title={week === 4 ? "Convert to Weekly Client" : "Move forward one week"}
                                                                     >
                                                                         →
                                                                     </button>
                                                                 )}
+                                                                {/* Remove button */}
                                                                 <button 
                                                                     className="icon-btn"
                                                                     onClick={() => {
                                                                         if (confirm(`Remove ${client.name}?`)) {
                                                                             setClientData(prev => ({
+                                                                                ...prev,
                                                                                 clients: prev.clients.filter(c => c.id !== client.id)
                                                                             }));
                                                                         }
@@ -1148,6 +1222,70 @@
                                 <div className="modal-footer">
                                     <button className="btn btn-secondary" onClick={() => setShowImportModal(false)}>Cancel</button>
                                     <button className="btn btn-primary" onClick={handleTextImport}>Import</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Add Client Modal */}
+                    {showAddClientModal && (
+                        <div className="modal-overlay" onClick={() => setShowAddClientModal(false)}>
+                            <div className="modal" onClick={e => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h3 className="modal-title">Add Client</h3>
+                                    <p className="modal-description">
+                                        Add a new client to your tracker
+                                    </p>
+                                </div>
+                                <div className="modal-body">
+                                    <div className="form-group">
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            placeholder="Client name"
+                                            value={newClient.name}
+                                            onChange={(e) => setNewClient({...newClient, name: e.target.value})}
+                                        />
+                                        <select
+                                            className="form-select"
+                                            value={newClient.week}
+                                            onChange={(e) => setNewClient({...newClient, week: parseInt(e.target.value)})}
+                                        >
+                                            <option value="0">Starting Next Week</option>
+                                            <option value="1">Week 1</option>
+                                            <option value="2">Week 2</option>
+                                            <option value="3">Week 3</option>
+                                            <option value="4">Week 4</option>
+                                            <option value="5">Weekly Client</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="modal-footer">
+                                    <button className="btn btn-secondary" onClick={() => {
+                                        setShowAddClientModal(false);
+                                        setNewClient({ name: '', week: 0 });
+                                    }}>
+                                        Cancel
+                                    </button>
+                                    <button className="btn btn-primary" onClick={() => {
+                                        if (!newClient.name) return;
+                                        
+                                        setClientData(prev => ({
+                                            ...prev,
+                                            clients: [...prev.clients, {
+                                                id: Date.now(),
+                                                name: newClient.name,
+                                                week: newClient.week,
+                                                startDate: new Date().toISOString().split('T')[0],
+                                                status: 'active'
+                                            }]
+                                        }));
+                                        
+                                        setShowAddClientModal(false);
+                                        setNewClient({ name: '', week: 0 });
+                                    }}>
+                                        Add Client
+                                    </button>
                                 </div>
                             </div>
                         </div>

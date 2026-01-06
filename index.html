@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Planner - Macca</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <title>Daily Planner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -16,37 +16,44 @@
         }
 
         :root {
-            --color-bg: #fafaf9;
+            --color-bg: #fafafa;
             --color-surface: #ffffff;
-            --color-text: #1c1917;
-            --color-text-light: #78716c;
-            --color-border: #e7e5e4;
+            --color-text: #18181b;
+            --color-text-secondary: #71717a;
+            --color-border: #e4e4e7;
+            --color-border-hover: #d4d4d8;
+            
+            --color-primary: #0284c7;
+            --color-primary-light: #e0f2fe;
+            --color-primary-hover: #0369a1;
             
             --color-work: #0891b2;
             --color-work-light: #ecfeff;
             --color-training: #ea580c;
             --color-training-light: #fff7ed;
-            --color-task: #7c3aed;
-            --color-task-light: #faf5ff;
-            --color-priority: #eab308;
-            --color-priority-light: #fefce8;
+            --color-task: #8b5cf6;
+            --color-task-light: #f5f3ff;
             
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+            
+            --transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body {
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
             background: var(--color-bg);
             color: var(--color-text);
-            line-height: 1.6;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
 
         .app-container {
             max-width: 1600px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 1.5rem;
         }
 
         /* Header */
@@ -54,90 +61,105 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 0.75rem;
+            padding: 0.75rem 0 1rem 0;
             border-bottom: 1px solid var(--color-border);
+            margin-bottom: 1.5rem;
         }
 
-        .header h1 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            letter-spacing: -0.015em;
-        }
-
-        .header-controls {
+        .tabs {
             display: flex;
-            gap: 1rem;
-            align-items: center;
+            gap: 0.25rem;
         }
 
-        .mode-toggle {
+        .tab {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: transparent;
+            color: var(--color-text-secondary);
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border-radius: 0.375rem;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        .tab:hover {
+            background: var(--color-surface);
+            color: var(--color-text);
+        }
+
+        .tab.active {
+            background: var(--color-text);
+            color: white;
+        }
+
+        .user-toggle {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.25rem;
             background: var(--color-surface);
             padding: 0.25rem;
             border-radius: 0.5rem;
             box-shadow: var(--shadow-sm);
         }
 
-        .mode-toggle button {
-            padding: 0.5rem 1rem;
+        .user-btn {
+            padding: 0.375rem 0.875rem;
             border: none;
             background: transparent;
-            color: var(--color-text-light);
+            color: var(--color-text-secondary);
             font-weight: 500;
-            border-radius: 0.375rem;
+            font-size: 0.875rem;
             cursor: pointer;
-            transition: all 0.2s;
+            border-radius: 0.375rem;
+            transition: var(--transition);
             font-family: inherit;
         }
 
-        .mode-toggle button.active {
+        .user-btn.active {
             background: var(--color-text);
             color: white;
+            box-shadow: var(--shadow-xs);
         }
 
-        /* Weekly Overview */
-        .weekly-section {
-            margin-bottom: 2.5rem;
-        }
-
+        /* Section Headers */
         .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .section-title {
-            font-size: 1.25rem;
+            font-size: 0.875rem;
             font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--color-text-secondary);
         }
 
-        .import-buttons {
-            display: flex;
-            gap: 0.75rem;
-        }
-
+        /* Buttons */
         .btn {
-            padding: 0.625rem 1.25rem;
+            padding: 0.5rem 1rem;
             border: none;
             border-radius: 0.5rem;
             font-weight: 500;
-            font-family: inherit;
+            font-size: 0.875rem;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: var(--transition);
+            font-family: inherit;
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
         }
 
         .btn-primary {
-            background: var(--color-text);
+            background: var(--color-primary);
             color: white;
         }
 
         .btn-primary:hover {
+            background: var(--color-primary-hover);
             transform: translateY(-1px);
             box-shadow: var(--shadow-md);
         }
@@ -149,113 +171,114 @@
         }
 
         .btn-secondary:hover {
-            background: var(--color-bg);
+            border-color: var(--color-border-hover);
+            box-shadow: var(--shadow-sm);
         }
 
-        .week-days {
+        /* Week Days Grid */
+        .week-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 1rem;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
         }
 
         .day-card {
             background: var(--color-surface);
+            border: 1px solid var(--color-border);
             border-radius: 0.75rem;
-            padding: 1.25rem;
-            box-shadow: var(--shadow-sm);
+            padding: 1rem;
             cursor: pointer;
-            transition: all 0.2s;
-            border: 2px solid transparent;
+            transition: var(--transition);
         }
 
         .day-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+            border-color: var(--color-border-hover);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-1px);
         }
 
         .day-card.active {
-            border-color: var(--color-text);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .day-header {
-            margin-bottom: 1rem;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-light);
         }
 
         .day-name {
-            font-size: 0.875rem;
-            color: var(--color-text-light);
+            font-size: 0.75rem;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            font-weight: 600;
+            color: var(--color-text-secondary);
         }
 
         .day-date {
             font-size: 1.5rem;
-            font-weight: 700;
+            font-weight: 600;
             margin-top: 0.25rem;
+            margin-bottom: 0.75rem;
         }
 
-        .day-badges {
+        .day-indicators {
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .badge {
-            padding: 0.375rem 0.75rem;
-            border-radius: 0.375rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
             gap: 0.375rem;
         }
 
-        .badge-work {
+        .indicator {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-weight: 500;
+        }
+
+        .indicator-work {
             background: var(--color-work-light);
             color: var(--color-work);
         }
 
-        .badge-training {
+        .indicator-training {
             background: var(--color-training-light);
             color: var(--color-training);
         }
 
-        .badge-tasks {
+        .indicator-tasks {
             background: var(--color-task-light);
             color: var(--color-task);
         }
 
-        /* Daily Detail */
-        .daily-section {
+        /* Daily Detail Panels */
+        .detail-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2rem;
+            gap: 1.5rem;
         }
 
         .panel {
             background: var(--color-surface);
+            border: 1px solid var(--color-border);
             border-radius: 0.75rem;
-            padding: 1.5rem;
-            box-shadow: var(--shadow-sm);
+            overflow: hidden;
         }
 
         .panel-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--color-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid var(--color-border);
+            background: var(--color-surface);
         }
 
         .panel-title {
-            font-size: 1.125rem;
+            font-size: 0.875rem;
             font-weight: 600;
         }
 
-        /* Events & Schedule */
+        .panel-body {
+            padding: 1.25rem;
+        }
+
+        /* Events Timeline */
         .timeline {
             display: flex;
             flex-direction: column;
@@ -265,53 +288,51 @@
         .event-item {
             padding: 1rem;
             border-radius: 0.5rem;
-            border-left: 4px solid;
+            border-left: 3px solid;
+            background: var(--color-bg);
         }
 
         .event-item.work {
-            background: var(--color-work-light);
             border-color: var(--color-work);
+            background: var(--color-work-light);
         }
 
         .event-item.training {
-            background: var(--color-training-light);
             border-color: var(--color-training);
+            background: var(--color-training-light);
         }
 
         .event-time {
-            font-family: 'Space Mono', monospace;
-            font-size: 0.875rem;
-            font-weight: 700;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
             margin-bottom: 0.25rem;
         }
 
         .event-title {
             font-weight: 600;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.125rem;
         }
 
         .event-detail {
             font-size: 0.875rem;
-            color: var(--color-text-light);
+            color: var(--color-text-secondary);
         }
 
         /* Tasks */
         .priority-section {
             margin-bottom: 1.5rem;
             padding-bottom: 1.5rem;
-            border-bottom: 2px solid var(--color-border);
+            border-bottom: 1px solid var(--color-border);
         }
 
         .priority-label {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-weight: 700;
-            color: var(--color-text);
-            margin-bottom: 0.75rem;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.75rem;
         }
 
         .task-list {
@@ -325,28 +346,33 @@
             align-items: flex-start;
             gap: 0.75rem;
             padding: 0.75rem;
-            background: white;
-            border-radius: 0.375rem;
-            transition: all 0.2s;
+            background: var(--color-bg);
+            border-radius: 0.5rem;
+            transition: var(--transition);
         }
 
         .task-item:hover {
-            box-shadow: var(--shadow-sm);
+            background: var(--color-border);
         }
 
         .task-checkbox {
-            width: 1.25rem;
-            height: 1.25rem;
+            width: 1.125rem;
+            height: 1.125rem;
             border: 2px solid var(--color-border);
             border-radius: 0.25rem;
             cursor: pointer;
             flex-shrink: 0;
             margin-top: 0.125rem;
+            transition: var(--transition);
+        }
+
+        .task-checkbox:hover {
+            border-color: var(--color-primary);
         }
 
         .task-checkbox.checked {
-            background: var(--color-task);
-            border-color: var(--color-task);
+            background: var(--color-primary);
+            border-color: var(--color-primary);
             position: relative;
         }
 
@@ -354,98 +380,49 @@
             content: '✓';
             position: absolute;
             color: white;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
+            font-weight: 700;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
         }
 
-        .task-content {
-            flex: 1;
-        }
-
         .task-title {
+            font-size: 0.875rem;
             font-weight: 500;
         }
 
         .task-title.completed {
             text-decoration: line-through;
-            color: var(--color-text-light);
-        }
-
-        .completed-section {
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 2px solid var(--color-border);
-        }
-
-        .collapsed-header {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--color-text-light);
-            font-size: 0.875rem;
-            font-weight: 600;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 0.375rem;
-            transition: background 0.2s;
-        }
-
-        .collapsed-header:hover {
-            background: var(--color-bg);
+            color: var(--color-text-secondary);
         }
 
         .empty-state {
             text-align: center;
-            padding: 2rem;
-            color: var(--color-text-light);
+            padding: 3rem 1rem;
+            color: var(--color-text-secondary);
+            font-size: 0.875rem;
         }
 
-        .empty-state-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            opacity: 0.3;
-        }
-
-        /* Add buttons */
-        .add-item-btn {
-            width: 100%;
-            padding: 0.75rem;
-            background: var(--color-bg);
-            border: 2px dashed var(--color-border);
-            border-radius: 0.5rem;
-            color: var(--color-text-light);
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: inherit;
-        }
-
-        .add-item-btn:hover {
-            border-color: var(--color-text);
-            color: var(--color-text);
-            background: white;
-        }
-
-        /* Import Modal */
+        /* Modal */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.4);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 1000;
+            backdrop-filter: blur(4px);
         }
 
         .modal {
             background: var(--color-surface);
             border-radius: 1rem;
-            padding: 2rem;
+            padding: 1.5rem;
             max-width: 500px;
             width: 90%;
             box-shadow: var(--shadow-lg);
@@ -456,56 +433,146 @@
         }
 
         .modal-title {
-            font-size: 1.5rem;
-            font-weight: 700;
+            font-size: 1.125rem;
+            font-weight: 600;
             margin-bottom: 0.5rem;
         }
 
         .modal-description {
-            color: var(--color-text-light);
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
         }
 
-        .upload-area {
-            border: 3px dashed var(--color-border);
-            border-radius: 0.75rem;
-            padding: 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 1rem;
-        }
-
-        .upload-area:hover {
-            border-color: var(--color-text);
-            background: var(--color-bg);
-        }
-
-        .upload-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
+        .modal-body {
+            margin-bottom: 1.5rem;
         }
 
         .modal-footer {
             display: flex;
             gap: 0.75rem;
             justify-content: flex-end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            padding: 0.75rem;
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            font-family: inherit;
+            font-size: 0.875rem;
+            transition: var(--transition);
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-light);
+        }
+
+        .form-textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .form-checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        /* Client Tracker */
+        .client-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
             margin-top: 1.5rem;
+        }
+
+        .week-column {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 0.75rem;
+            overflow: hidden;
+            min-height: 350px;
+        }
+
+        .week-header {
+            padding: 0.875rem 1rem;
+            background: var(--color-bg);
+            border-bottom: 1px solid var(--color-border);
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .week-body {
+            padding: 0.75rem;
+        }
+
+        .client-card {
+            padding: 0.75rem;
+            background: var(--color-work-light);
+            border-left: 3px solid var(--color-work);
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .client-name {
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .client-actions {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .icon-btn {
+            padding: 0.25rem 0.5rem;
+            border: none;
+            background: white;
+            color: var(--color-text-secondary);
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .icon-btn:hover {
+            background: var(--color-text);
+            color: white;
         }
 
         /* Responsive */
         @media (max-width: 1200px) {
-            .week-days {
+            .week-grid {
                 grid-template-columns: repeat(4, 1fr);
+            }
+            .client-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
 
         @media (max-width: 768px) {
-            .week-days {
+            .week-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
-            
-            .daily-section {
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+            .client-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -518,28 +585,26 @@
         const { useState, useEffect } = React;
 
         function DailyPlanner() {
+            // State
             const [currentUser, setCurrentUser] = useState(() => {
                 return localStorage.getItem('currentUser') || 'macca';
             });
-            const [mode, setMode] = useState('daily'); // daily, monthly, yearly, clients
+            const [mode, setMode] = useState('daily');
             
-            // Initialize with today's index (Monday-based)
             const getTodayIndex = () => {
                 const jsDay = new Date().getDay();
                 return jsDay === 0 ? 6 : jsDay - 1;
             };
             
             const [selectedDay, setSelectedDay] = useState(getTodayIndex());
-            const [showImportModal, setShowImportModal] = useState(false);
-            const [importType, setImportType] = useState(null);
-            const [showCompletedTasks, setShowCompletedTasks] = useState(false);
-            const [importText, setImportText] = useState('');
             const [showAddEventModal, setShowAddEventModal] = useState(false);
             const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+            const [showImportModal, setShowImportModal] = useState(false);
+            const [importText, setImportText] = useState('');
             const [newEvent, setNewEvent] = useState({ time: '', title: '', detail: '', type: 'work' });
             const [newTask, setNewTask] = useState({ title: '', priority: false });
 
-            // Initialize default data structure
+            // Data structure
             const getDefaultWeekData = () => ({
                 0: { events: [], tasks: [] },
                 1: { events: [], tasks: [] },
@@ -550,90 +615,38 @@
                 6: { events: [], tasks: [] }
             });
 
-            // Sample data for Macca on first load
-            const getMaccaSampleData = () => ({
-                1: {
-                    events: [
-                        { id: Date.now() + 1, type: 'work', time: '09:00', title: 'Conditn Shift', detail: 'Studio Manager - Gladesville' },
-                        { id: Date.now() + 2, type: 'training', time: '18:00', title: 'Hyrox Conditioning', detail: '60min - Running intervals' }
-                    ],
-                    tasks: [
-                        { id: Date.now() + 3, title: 'Review week schedule with Ruby', completed: false, priority: true },
-                        { id: Date.now() + 4, title: 'Update Rumac Fit client meal plans', completed: false, priority: true },
-                        { id: Date.now() + 5, title: 'Check GoHighLevel webhook logs', completed: false, priority: true },
-                        { id: Date.now() + 6, title: 'Reply to Conditn member emails', completed: false, priority: false }
-                    ]
-                },
-                ...Object.fromEntries([0,2,3,4,5,6].map(i => [i, { events: [], tasks: [] }]))
+            const [weekData, setWeekData] = useState(() => {
+                const saved = localStorage.getItem(`planner_${currentUser}`);
+                return saved ? JSON.parse(saved) : getDefaultWeekData();
             });
 
-            // Load data from localStorage
-            const loadUserData = (userId) => {
-                const saved = localStorage.getItem(`planner_${userId}`);
-                if (saved) {
-                    return JSON.parse(saved);
-                }
-                // Return sample data for Macca on first load
-                if (userId === 'macca') {
-                    return getMaccaSampleData();
-                }
-                return getDefaultWeekData();
-            };
-
-            const [weekData, setWeekData] = useState(getDefaultWeekData());
-
-            // Client tracker data
-            const getDefaultClientData = () => ({
-                clients: []
+            // Client data
+            const [clientData, setClientData] = useState(() => {
+                const saved = localStorage.getItem(`clients_${currentUser}`);
+                return saved ? JSON.parse(saved) : { clients: [] };
             });
 
-            const loadClientData = (userId) => {
-                const saved = localStorage.getItem(`clients_${userId}`);
-                if (saved) {
-                    return JSON.parse(saved);
-                }
-                return getDefaultClientData();
-            };
-
-            const [clientData, setClientData] = useState(getDefaultClientData());
-
-            // Load client data on user change
+            // Save data
             useEffect(() => {
-                if (currentUser) {
-                    setClientData(loadClientData(currentUser));
-                }
-            }, [currentUser]);
-
-            // Save client data
-            useEffect(() => {
-                if (currentUser) {
-                    localStorage.setItem(`clients_${currentUser}`, JSON.stringify(clientData));
-                }
-            }, [clientData, currentUser]);
-
-            // Load user data on login
-            useEffect(() => {
-                if (currentUser) {
-                    setWeekData(loadUserData(currentUser));
-                }
-            }, [currentUser]);
-
-            // Save data to localStorage whenever weekData changes
-            useEffect(() => {
-                if (currentUser) {
-                    localStorage.setItem(`planner_${currentUser}`, JSON.stringify(weekData));
-                }
+                localStorage.setItem(`planner_${currentUser}`, JSON.stringify(weekData));
             }, [weekData, currentUser]);
 
-            // Week starts on Monday
+            useEffect(() => {
+                localStorage.setItem(`clients_${currentUser}`, JSON.stringify(clientData));
+            }, [clientData, currentUser]);
+
+            // Load data on user change
+            useEffect(() => {
+                const saved = localStorage.getItem(`planner_${currentUser}`);
+                setWeekData(saved ? JSON.parse(saved) : getDefaultWeekData());
+                
+                const savedClients = localStorage.getItem(`clients_${currentUser}`);
+                setClientData(savedClients ? JSON.parse(savedClients) : { clients: [] });
+            }, [currentUser]);
+
+            // Helper functions
             const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
             const today = new Date();
-
-            // Convert day index: 0=Mon, 1=Tue, ... 6=Sun
-            const getTodayIndex = () => {
-                const jsDay = today.getDay(); // 0=Sun, 1=Mon, ... 6=Sat
-                return jsDay === 0 ? 6 : jsDay - 1; // Convert to 0=Mon, 6=Sun
-            };
 
             const getDateForDay = (displayIndex) => {
                 const date = new Date(today);
@@ -643,19 +656,65 @@
                 return date.getDate();
             };
 
-            // Map display index (0=Mon) to data index (0=Sun, 1=Mon)
             const getDataIndex = (displayIndex) => {
                 return displayIndex === 6 ? 0 : displayIndex + 1;
             };
 
-            const currentDayData = weekData[getDataIndex(selectedDay)] || { events: [], tasks: [] };
+            const dataIndex = getDataIndex(selectedDay);
+            const currentDayData = weekData[dataIndex] || { events: [], tasks: [] };
             const priorityTasks = currentDayData.tasks.filter(t => t.priority && !t.completed);
             const regularTasks = currentDayData.tasks.filter(t => !t.priority && !t.completed);
             const completedTasks = currentDayData.tasks.filter(t => t.completed);
 
-            const openImportModal = (type) => {
-                setImportType(type);
-                setShowImportModal(true);
+            // Event handlers
+            const handleAddEvent = () => {
+                if (!newEvent.time || !newEvent.title) return;
+                
+                setWeekData(prev => ({
+                    ...prev,
+                    [dataIndex]: {
+                        ...prev[dataIndex],
+                        events: [...(prev[dataIndex].events || []), {
+                            id: Date.now(),
+                            ...newEvent
+                        }]
+                    }
+                }));
+                
+                setNewEvent({ time: '', title: '', detail: '', type: 'work' });
+                setShowAddEventModal(false);
+            };
+
+            const handleAddTask = () => {
+                if (!newTask.title) return;
+                
+                setWeekData(prev => ({
+                    ...prev,
+                    [dataIndex]: {
+                        ...prev[dataIndex],
+                        tasks: [...(prev[dataIndex].tasks || []), {
+                            id: Date.now(),
+                            title: newTask.title,
+                            completed: false,
+                            priority: newTask.priority
+                        }]
+                    }
+                }));
+                
+                setNewTask({ title: '', priority: false });
+                setShowAddTaskModal(false);
+            };
+
+            const toggleTaskComplete = (taskId) => {
+                setWeekData(prev => ({
+                    ...prev,
+                    [dataIndex]: {
+                        ...prev[dataIndex],
+                        tasks: prev[dataIndex].tasks.map(task =>
+                            task.id === taskId ? { ...task, completed: !task.completed } : task
+                        )
+                    }
+                }));
             };
 
             const handleTextImport = () => {
@@ -668,7 +727,6 @@
                     const trimmed = line.trim();
                     if (!trimmed) return;
 
-                    // Parse format: "Monday 9am Conditn Shift" or "Mon 18:00 Hyrox training"
                     const dayMatch = trimmed.match(/^(mon|tue|wed|thu|fri|sat|sun)/i);
                     if (!dayMatch) return;
 
@@ -676,9 +734,8 @@
                     const dayIndex = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].indexOf(dayName.substring(0, 3));
                     if (dayIndex === -1) return;
 
-                    const dataIndex = dayIndex === 6 ? 0 : dayIndex + 1;
+                    const dataIdx = dayIndex === 6 ? 0 : dayIndex + 1;
 
-                    // Extract time (supports 9am, 9:00, 18:00, etc)
                     const timeMatch = trimmed.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
                     if (!timeMatch) return;
 
@@ -692,23 +749,18 @@
                     }
 
                     const time = `${hour.toString().padStart(2, '0')}:${minute}`;
-
-                    // Get the rest as title/detail
                     const rest = trimmed.substring(dayMatch[0].length + (timeMatch[0].length || 0)).trim();
                     const title = rest || 'Event';
 
-                    // Determine type based on keywords
                     const lowerRest = rest.toLowerCase();
                     const type = lowerRest.includes('shift') || lowerRest.includes('work') || lowerRest.includes('conditn') 
-                        ? 'work' 
-                        : 'training';
+                        ? 'work' : 'training';
 
-                    // Add event
-                    if (!newData[dataIndex].events) {
-                        newData[dataIndex].events = [];
+                    if (!newData[dataIdx].events) {
+                        newData[dataIdx].events = [];
                     }
 
-                    newData[dataIndex].events.push({
+                    newData[dataIdx].events.push({
                         id: Date.now() + Math.random(),
                         type: type,
                         time: time,
@@ -722,318 +774,204 @@
                 setShowImportModal(false);
             };
 
-            const handleAddEvent = () => {
-                if (!newEvent.time || !newEvent.title) return;
-
-                const dataIndex = getDataIndex(selectedDay);
-                setWeekData(prev => ({
-                    ...prev,
-                    [dataIndex]: {
-                        ...prev[dataIndex],
-                        events: [...(prev[dataIndex].events || []), {
-                            id: Date.now(),
-                            ...newEvent
-                        }]
-                    }
-                }));
-
-                setNewEvent({ time: '', title: '', detail: '', type: 'work' });
-                setShowAddEventModal(false);
-            };
-
-            const handleAddTask = () => {
-                if (!newTask.title) return;
-
-                const dataIndex = getDataIndex(selectedDay);
-                setWeekData(prev => ({
-                    ...prev,
-                    [dataIndex]: {
-                        ...prev[dataIndex],
-                        tasks: [...(prev[dataIndex].tasks || []), {
-                            id: Date.now(),
-                            title: newTask.title,
-                            completed: false,
-                            priority: newTask.priority
-                        }]
-                    }
-                }));
-
-                setNewTask({ title: '', priority: false });
-                setShowAddTaskModal(false);
-            };
-
-            const toggleTaskComplete = (taskId) => {
-                const dataIndex = getDataIndex(selectedDay);
-                setWeekData(prev => ({
-                    ...prev,
-                    [dataIndex]: {
-                        ...prev[dataIndex],
-                        tasks: prev[dataIndex].tasks.map(task =>
-                            task.id === taskId ? { ...task, completed: !task.completed } : task
-                        )
-                    }
-                }));
-            };
-
             return (
                 <div className="app-container">
                     {/* Header */}
                     <div className="header">
-                        <div className="mode-toggle">
-                            <button 
-                                className={mode === 'daily' ? 'active' : ''}
-                                onClick={() => setMode('daily')}
-                            >
+                        <div className="tabs">
+                            <button className={`tab ${mode === 'daily' ? 'active' : ''}`} onClick={() => setMode('daily')}>
                                 Daily
                             </button>
-                            <button 
-                                className={mode === 'monthly' ? 'active' : ''}
-                                onClick={() => setMode('monthly')}
-                            >
+                            <button className={`tab ${mode === 'monthly' ? 'active' : ''}`} onClick={() => setMode('monthly')}>
                                 Monthly
                             </button>
-                            <button 
-                                className={mode === 'yearly' ? 'active' : ''}
-                                onClick={() => setMode('yearly')}
-                            >
+                            <button className={`tab ${mode === 'yearly' ? 'active' : ''}`} onClick={() => setMode('yearly')}>
                                 Yearly
                             </button>
-                            <button 
-                                className={mode === 'clients' ? 'active' : ''}
-                                onClick={() => setMode('clients')}
-                            >
-                                Client Tracker
+                            <button className={`tab ${mode === 'clients' ? 'active' : ''}`} onClick={() => setMode('clients')}>
+                                Clients
                             </button>
                         </div>
-                        <div className="header-controls">
-                            <div className="mode-toggle">
-                                <button 
-                                    className={currentUser === 'macca' ? 'active' : ''}
-                                    onClick={() => {
-                                        setCurrentUser('macca');
-                                        localStorage.setItem('currentUser', 'macca');
-                                    }}
-                                >
-                                    Macca
-                                </button>
-                                <button 
-                                    className={currentUser === 'ruby' ? 'active' : ''}
-                                    onClick={() => {
-                                        setCurrentUser('ruby');
-                                        localStorage.setItem('currentUser', 'ruby');
-                                    }}
-                                >
-                                    Ruby
-                                </button>
-                            </div>
+                        
+                        <div className="user-toggle">
+                            <button 
+                                className={`user-btn ${currentUser === 'macca' ? 'active' : ''}`}
+                                onClick={() => setCurrentUser('macca')}
+                            >
+                                Macca
+                            </button>
+                            <button 
+                                className={`user-btn ${currentUser === 'ruby' ? 'active' : ''}`}
+                                onClick={() => setCurrentUser('ruby')}
+                            >
+                                Ruby
+                            </button>
                         </div>
                     </div>
 
-                    {/* Content based on mode */}
+                    {/* Daily View */}
                     {mode === 'daily' && (
                         <>
-
-                    {/* Weekly Overview */}
-                    <div className="weekly-section">
-                        <div className="section-header">
-                            <h2 className="section-title">Week Overview</h2>
-                            <div className="import-buttons">
-                                <button className="btn btn-secondary" onClick={() => openImportModal('text')}>
+                            <div className="section-header">
+                                <h2 className="section-title">Week Overview</h2>
+                                <button className="btn btn-secondary" onClick={() => setShowImportModal(true)}>
                                     Import Schedule
                                 </button>
                             </div>
-                        </div>
 
-                        <div className="week-days">
-                            {dayNames.map((day, displayIndex) => {
-                                const dataIndex = getDataIndex(displayIndex);
-                                const dayData = weekData[dataIndex] || { events: [], tasks: [] };
-                                const workEvents = dayData.events.filter(e => e.type === 'work');
-                                const trainingEvents = dayData.events.filter(e => e.type === 'training');
-                                const incompleteTasks = dayData.tasks.filter(t => !t.completed).length;
-                                const isToday = displayIndex === getTodayIndex();
+                            <div className="week-grid">
+                                {dayNames.map((day, displayIndex) => {
+                                    const dataIdx = getDataIndex(displayIndex);
+                                    const dayData = weekData[dataIdx] || { events: [], tasks: [] };
+                                    const workEvents = dayData.events.filter(e => e.type === 'work');
+                                    const trainingEvents = dayData.events.filter(e => e.type === 'training');
+                                    const incompleteTasks = dayData.tasks.filter(t => !t.completed).length;
 
-                                return (
-                                    <div 
-                                        key={displayIndex}
-                                        className={`day-card ${selectedDay === displayIndex ? 'active' : ''}`}
-                                        onClick={() => setSelectedDay(displayIndex)}
-                                    >
-                                        <div className="day-header">
+                                    return (
+                                        <div 
+                                            key={displayIndex}
+                                            className={`day-card ${selectedDay === displayIndex ? 'active' : ''}`}
+                                            onClick={() => setSelectedDay(displayIndex)}
+                                        >
                                             <div className="day-name">{day}</div>
                                             <div className="day-date">{getDateForDay(displayIndex)}</div>
-                                        </div>
-                                        <div className="day-badges">
-                                            {workEvents.length > 0 && (
-                                                <div className="badge badge-work">
-                                                    {workEvents.length} shift{workEvents.length > 1 ? 's' : ''}
-                                                </div>
-                                            )}
-                                            {trainingEvents.length > 0 && (
-                                                <div className="badge badge-training">
-                                                    {trainingEvents.length} workout{trainingEvents.length > 1 ? 's' : ''}
-                                                </div>
-                                            )}
-                                            {incompleteTasks > 0 && (
-                                                <div className="badge badge-tasks">
-                                                    {incompleteTasks} task{incompleteTasks > 1 ? 's' : ''}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Daily Detail */}
-                    <div className="daily-section">
-                        {/* Left: Events & Schedule */}
-                        <div className="panel">
-                            <div className="panel-header">
-                                <h3 className="panel-title">
-                                    {dayNames[selectedDay]}'s Schedule
-                                </h3>
-                                <button 
-                                    className="btn btn-secondary" 
-                                    style={{padding: '0.5rem 1rem', fontSize: '0.875rem'}}
-                                    onClick={() => setShowAddEventModal(true)}
-                                >
-                                    + Add Event
-                                </button>
-                            </div>
-
-                            {currentDayData.events.length > 0 ? (
-                                <div className="timeline">
-                                    {currentDayData.events.sort((a, b) => a.time.localeCompare(b.time)).map(event => (
-                                        <div key={event.id} className={`event-item ${event.type}`}>
-                                            <div className="event-time">{event.time}</div>
-                                            <div className="event-title">{event.title}</div>
-                                            <div className="event-detail">{event.detail}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="empty-state">
-                                    <p>No events scheduled for this day</p>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Right: Tasks */}
-                        <div className="panel">
-                            <div className="panel-header">
-                                <h3 className="panel-title">Tasks & Priorities</h3>
-                                <button 
-                                    className="btn btn-secondary" 
-                                    style={{padding: '0.5rem 1rem', fontSize: '0.875rem'}}
-                                    onClick={() => setShowAddTaskModal(true)}
-                                >
-                                    + Add Task
-                                </button>
-                            </div>
-
-                            {/* Top 3 Priorities */}
-                            {priorityTasks.length > 0 && (
-                                <div className="priority-section">
-                                    <div className="priority-label">
-                                        Top 3 Priorities
-                                    </div>
-                                    <div className="task-list">
-                                        {priorityTasks.map(task => (
-                                            <div key={task.id} className="task-item">
-                                                <div 
-                                                    className={`task-checkbox ${task.completed ? 'checked' : ''}`}
-                                                    onClick={() => toggleTaskComplete(task.id)}
-                                                />
-                                                <div className="task-content">
-                                                    <div className={`task-title ${task.completed ? 'completed' : ''}`}>
-                                                        {task.title}
+                                            <div className="day-indicators">
+                                                {workEvents.length > 0 && (
+                                                    <div className="indicator indicator-work">
+                                                        {workEvents.length} shift{workEvents.length > 1 ? 's' : ''}
                                                     </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Regular Tasks */}
-                            {regularTasks.length > 0 && (
-                                <div className="task-list">
-                                    {regularTasks.map(task => (
-                                        <div key={task.id} className="task-item">
-                                            <div 
-                                                className={`task-checkbox ${task.completed ? 'checked' : ''}`}
-                                                onClick={() => toggleTaskComplete(task.id)}
-                                            />
-                                            <div className="task-content">
-                                                <div className={`task-title ${task.completed ? 'completed' : ''}`}>
-                                                    {task.title}
-                                                </div>
+                                                )}
+                                                {trainingEvents.length > 0 && (
+                                                    <div className="indicator indicator-training">
+                                                        {trainingEvents.length} workout{trainingEvents.length > 1 ? 's' : ''}
+                                                    </div>
+                                                )}
+                                                {incompleteTasks > 0 && (
+                                                    <div className="indicator indicator-tasks">
+                                                        {incompleteTasks} task{incompleteTasks > 1 ? 's' : ''}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
+                                    );
+                                })}
+                            </div>
 
-                            {priorityTasks.length === 0 && regularTasks.length === 0 && (
-                                <div className="empty-state">
-                                    <div className="empty-state-icon">✓</div>
-                                    <p>No tasks for this day</p>
-                                </div>
-                            )}
-
-                            {/* Completed Tasks */}
-                            {completedTasks.length > 0 && (
-                                <div className="completed-section">
-                                    <div 
-                                        className="collapsed-header"
-                                        onClick={() => setShowCompletedTasks(!showCompletedTasks)}
-                                    >
-                                        <span>{showCompletedTasks ? '▼' : '▶'}</span>
-                                        <span>Completed ({completedTasks.length})</span>
+                            <div className="detail-grid">
+                                {/* Events Panel */}
+                                <div className="panel">
+                                    <div className="panel-header">
+                                        <h3 className="panel-title">{dayNames[selectedDay]}'s Schedule</h3>
+                                        <button className="btn btn-secondary" onClick={() => setShowAddEventModal(true)}>
+                                            + Event
+                                        </button>
                                     </div>
-                                    {showCompletedTasks && (
-                                        <div className="task-list" style={{marginTop: '0.75rem'}}>
-                                            {completedTasks.map(task => (
-                                                <div key={task.id} className="task-item">
-                                                    <div 
-                                                        className="task-checkbox checked"
-                                                        onClick={() => toggleTaskComplete(task.id)}
-                                                    />
-                                                    <div className="task-content">
-                                                        <div className="task-title completed">
+                                    <div className="panel-body">
+                                        {currentDayData.events.length > 0 ? (
+                                            <div className="timeline">
+                                                {currentDayData.events.sort((a, b) => a.time.localeCompare(b.time)).map(event => (
+                                                    <div key={event.id} className={`event-item ${event.type}`}>
+                                                        <div className="event-time">{event.time}</div>
+                                                        <div className="event-title">{event.title}</div>
+                                                        {event.detail && <div className="event-detail">{event.detail}</div>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="empty-state">No events scheduled</div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Tasks Panel */}
+                                <div className="panel">
+                                    <div className="panel-header">
+                                        <h3 className="panel-title">Tasks</h3>
+                                        <button className="btn btn-secondary" onClick={() => setShowAddTaskModal(true)}>
+                                            + Task
+                                        </button>
+                                    </div>
+                                    <div className="panel-body">
+                                        {priorityTasks.length > 0 && (
+                                            <div className="priority-section">
+                                                <div className="priority-label">Priority Tasks</div>
+                                                <div className="task-list">
+                                                    {priorityTasks.map(task => (
+                                                        <div key={task.id} className="task-item">
+                                                            <div 
+                                                                className={`task-checkbox ${task.completed ? 'checked' : ''}`}
+                                                                onClick={() => toggleTaskComplete(task.id)}
+                                                            />
+                                                            <div className={`task-title ${task.completed ? 'completed' : ''}`}>
+                                                                {task.title}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {regularTasks.length > 0 && (
+                                            <div className="task-list">
+                                                {regularTasks.map(task => (
+                                                    <div key={task.id} className="task-item">
+                                                        <div 
+                                                            className={`task-checkbox ${task.completed ? 'checked' : ''}`}
+                                                            onClick={() => toggleTaskComplete(task.id)}
+                                                        />
+                                                        <div className={`task-title ${task.completed ? 'completed' : ''}`}>
                                                             {task.title}
                                                         </div>
                                                     </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {priorityTasks.length === 0 && regularTasks.length === 0 && (
+                                            <div className="empty-state">No tasks for today</div>
+                                        )}
+
+                                        {completedTasks.length > 0 && (
+                                            <div style={{marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border)'}}>
+                                                <div className="priority-label" style={{marginBottom: '0.75rem'}}>
+                                                    Completed ({completedTasks.length})
                                                 </div>
-                                            ))}
-                                        </div>
-                                    )}
+                                                <div className="task-list">
+                                                    {completedTasks.map(task => (
+                                                        <div key={task.id} className="task-item">
+                                                            <div 
+                                                                className="task-checkbox checked"
+                                                                onClick={() => toggleTaskComplete(task.id)}
+                                                            />
+                                                            <div className="task-title completed">{task.title}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            )}
-                        </div>
-                    </div>
-                    </>
+                            </div>
+                        </>
                     )}
 
                     {/* Monthly View */}
                     {mode === 'monthly' && (
-                        <div style={{textAlign: 'center', padding: '3rem', color: 'var(--color-text-light)'}}>
-                            <p>Monthly view - Coming soon</p>
+                        <div className="empty-state" style={{padding: '4rem 1rem'}}>
+                            Monthly view coming soon
                         </div>
                     )}
 
                     {/* Yearly View */}
                     {mode === 'yearly' && (
-                        <div style={{textAlign: 'center', padding: '3rem', color: 'var(--color-text-light)'}}>
-                            <p>Yearly view - Coming soon</p>
+                        <div className="empty-state" style={{padding: '4rem 1rem'}}>
+                            Yearly view coming soon
                         </div>
                     )}
 
-                    {/* Client Tracker View */}
+                    {/* Client Tracker */}
                     {mode === 'clients' && (
-                        <div style={{marginTop: '1rem'}}>
+                        <>
                             <div className="section-header">
                                 <h2 className="section-title">Client Tracker - 4 Week Test ($29)</h2>
                                 <button className="btn btn-primary" onClick={() => {
@@ -1043,7 +981,6 @@
                                             clients: [...prev.clients, {
                                                 id: Date.now(),
                                                 name: name,
-                                                startDate: new Date().toISOString(),
                                                 week: 1,
                                                 status: 'active'
                                             }]
@@ -1054,99 +991,59 @@
                                 </button>
                             </div>
 
-                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginTop: '1.5rem'}}>
-                                {[1,2,3,4].map(week => {
+                            <div className="client-grid">
+                                {[1, 2, 3, 4].map(week => {
                                     const weekClients = clientData.clients.filter(c => c.week === week && c.status === 'active');
+                                    
                                     return (
-                                        <div key={week} style={{
-                                            background: 'var(--color-surface)',
-                                            borderRadius: '0.75rem',
-                                            boxShadow: 'var(--shadow-sm)',
-                                            minHeight: '300px'
-                                        }}>
-                                            <div style={{
-                                                padding: '1rem',
-                                                background: 'var(--color-bg)',
-                                                borderTopLeftRadius: '0.75rem',
-                                                borderTopRightRadius: '0.75rem',
-                                                borderBottom: '2px solid var(--color-border)',
-                                                fontWeight: '600',
-                                                fontSize: '0.875rem',
-                                                textTransform: 'uppercase',
-                                                letterSpacing: '0.05em'
-                                            }}>
-                                                Week {week}
-                                            </div>
-                                            <div style={{padding: '1rem'}}>
+                                        <div key={week} className="week-column">
+                                            <div className="week-header">Week {week}</div>
+                                            <div className="week-body">
                                                 {weekClients.length > 0 ? (
-                                                    <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                                                        {weekClients.map(client => (
-                                                            <div key={client.id} style={{
-                                                                padding: '0.75rem',
-                                                                background: 'var(--color-work-light)',
-                                                                borderRadius: '0.375rem',
-                                                                borderLeft: '3px solid var(--color-work)',
-                                                                display: 'flex',
-                                                                justifyContent: 'space-between',
-                                                                alignItems: 'center'
-                                                            }}>
-                                                                <span style={{fontWeight: '500', fontSize: '0.875rem'}}>{client.name}</span>
-                                                                <div style={{display: 'flex', gap: '0.25rem'}}>
-                                                                    {week < 4 && (
-                                                                        <button 
-                                                                            className="btn btn-secondary"
-                                                                            style={{
-                                                                                padding: '0.25rem 0.5rem',
-                                                                                fontSize: '0.75rem',
-                                                                                minWidth: 'auto'
-                                                                            }}
-                                                                            onClick={() => {
-                                                                                setClientData(prev => ({
-                                                                                    clients: prev.clients.map(c => 
-                                                                                        c.id === client.id ? {...c, week: c.week + 1} : c
-                                                                                    )
-                                                                                }));
-                                                                            }}
-                                                                            title="Move to next week"
-                                                                        >
-                                                                            →
-                                                                        </button>
-                                                                    )}
+                                                    weekClients.map(client => (
+                                                        <div key={client.id} className="client-card">
+                                                            <span className="client-name">{client.name}</span>
+                                                            <div className="client-actions">
+                                                                {week < 4 && (
                                                                     <button 
-                                                                        className="btn btn-secondary"
-                                                                        style={{
-                                                                            padding: '0.25rem 0.5rem',
-                                                                            fontSize: '0.75rem',
-                                                                            minWidth: 'auto',
-                                                                            background: 'var(--color-text-light)',
-                                                                            color: 'white'
-                                                                        }}
+                                                                        className="icon-btn"
                                                                         onClick={() => {
-                                                                            if (confirm(`Remove ${client.name}?`)) {
-                                                                                setClientData(prev => ({
-                                                                                    clients: prev.clients.filter(c => c.id !== client.id)
-                                                                                }));
-                                                                            }
+                                                                            setClientData(prev => ({
+                                                                                clients: prev.clients.map(c => 
+                                                                                    c.id === client.id ? {...c, week: c.week + 1} : c
+                                                                                )
+                                                                            }));
                                                                         }}
-                                                                        title="Remove client"
+                                                                        title="Move to next week"
                                                                     >
-                                                                        ×
+                                                                        →
                                                                     </button>
-                                                                </div>
+                                                                )}
+                                                                <button 
+                                                                    className="icon-btn"
+                                                                    onClick={() => {
+                                                                        if (confirm(`Remove ${client.name}?`)) {
+                                                                            setClientData(prev => ({
+                                                                                clients: prev.clients.filter(c => c.id !== client.id)
+                                                                            }));
+                                                                        }
+                                                                    }}
+                                                                    title="Remove client"
+                                                                >
+                                                                    ×
+                                                                </button>
                                                             </div>
-                                                        ))}
-                                                    </div>
+                                                        </div>
+                                                    ))
                                                 ) : (
-                                                    <div style={{textAlign: 'center', padding: '2rem', color: 'var(--color-text-light)', fontSize: '0.875rem'}}>
-                                                        No clients
-                                                    </div>
+                                                    <div className="empty-state">No clients</div>
                                                 )}
                                             </div>
                                         </div>
                                     );
                                 })}
                             </div>
-                        </div>
+                        </>
                     )}
 
                     {/* Add Event Modal */}
@@ -1156,35 +1053,37 @@
                                 <div className="modal-header">
                                     <h3 className="modal-title">Add Event</h3>
                                 </div>
-                                <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
-                                    <input
-                                        type="time"
-                                        value={newEvent.time}
-                                        onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
-                                        style={{padding: '0.75rem', borderRadius: '0.375rem', border: '2px solid var(--color-border)', fontSize: '0.875rem', fontFamily: 'inherit'}}
-                                    />
-                                    <input
-                                        type="text"
-                                        value={newEvent.title}
-                                        onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
-                                        placeholder="Event title"
-                                        style={{padding: '0.75rem', borderRadius: '0.375rem', border: '2px solid var(--color-border)', fontSize: '0.875rem', fontFamily: 'inherit'}}
-                                    />
-                                    <input
-                                        type="text"
-                                        value={newEvent.detail}
-                                        onChange={(e) => setNewEvent({...newEvent, detail: e.target.value})}
-                                        placeholder="Details (optional)"
-                                        style={{padding: '0.75rem', borderRadius: '0.375rem', border: '2px solid var(--color-border)', fontSize: '0.875rem', fontFamily: 'inherit'}}
-                                    />
-                                    <select
-                                        value={newEvent.type}
-                                        onChange={(e) => setNewEvent({...newEvent, type: e.target.value})}
-                                        style={{padding: '0.75rem', borderRadius: '0.375rem', border: '2px solid var(--color-border)', fontSize: '0.875rem', fontFamily: 'inherit'}}
-                                    >
-                                        <option value="work">Work</option>
-                                        <option value="training">Training</option>
-                                    </select>
+                                <div className="modal-body">
+                                    <div className="form-group">
+                                        <input
+                                            type="time"
+                                            className="form-input"
+                                            value={newEvent.time}
+                                            onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
+                                        />
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            placeholder="Event title"
+                                            value={newEvent.title}
+                                            onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
+                                        />
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            placeholder="Details (optional)"
+                                            value={newEvent.detail}
+                                            onChange={(e) => setNewEvent({...newEvent, detail: e.target.value})}
+                                        />
+                                        <select
+                                            className="form-select"
+                                            value={newEvent.type}
+                                            onChange={(e) => setNewEvent({...newEvent, type: e.target.value})}
+                                        >
+                                            <option value="work">Work</option>
+                                            <option value="training">Training</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div className="modal-footer">
                                     <button className="btn btn-secondary" onClick={() => setShowAddEventModal(false)}>Cancel</button>
@@ -1201,22 +1100,24 @@
                                 <div className="modal-header">
                                     <h3 className="modal-title">Add Task</h3>
                                 </div>
-                                <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
-                                    <input
-                                        type="text"
-                                        value={newTask.title}
-                                        onChange={(e) => setNewTask({...newTask, title: e.target.value})}
-                                        placeholder="Task description"
-                                        style={{padding: '0.75rem', borderRadius: '0.375rem', border: '2px solid var(--color-border)', fontSize: '0.875rem', fontFamily: 'inherit'}}
-                                    />
-                                    <label style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'}}>
+                                <div className="modal-body">
+                                    <div className="form-group">
                                         <input
-                                            type="checkbox"
-                                            checked={newTask.priority}
-                                            onChange={(e) => setNewTask({...newTask, priority: e.target.checked})}
+                                            type="text"
+                                            className="form-input"
+                                            placeholder="Task description"
+                                            value={newTask.title}
+                                            onChange={(e) => setNewTask({...newTask, title: e.target.value})}
                                         />
-                                        <span>Mark as priority</span>
-                                    </label>
+                                        <label className="form-checkbox-group">
+                                            <input
+                                                type="checkbox"
+                                                checked={newTask.priority}
+                                                onChange={(e) => setNewTask({...newTask, priority: e.target.checked})}
+                                            />
+                                            <span>Mark as priority</span>
+                                        </label>
+                                    </div>
                                 </div>
                                 <div className="modal-footer">
                                     <button className="btn btn-secondary" onClick={() => setShowAddTaskModal(false)}>Cancel</button>
@@ -1233,61 +1134,20 @@
                                 <div className="modal-header">
                                     <h3 className="modal-title">Import Schedule</h3>
                                     <p className="modal-description">
-                                        Paste your schedule below. Each line should start with a day and time, followed by the event details.
+                                        Paste your schedule below. Format: Day Time Event (e.g., "Monday 9am Conditn Shift")
                                     </p>
                                 </div>
-
-                                <div style={{marginBottom: '1rem'}}>
-                                    <p style={{fontSize: '0.875rem', color: 'var(--color-text-light)', marginBottom: '0.5rem'}}>
-                                        <strong>Format examples:</strong>
-                                    </p>
-                                    <div style={{
-                                        background: 'var(--color-bg)',
-                                        padding: '0.75rem',
-                                        borderRadius: '0.5rem',
-                                        fontSize: '0.875rem',
-                                        fontFamily: 'monospace',
-                                        color: 'var(--color-text-light)'
-                                    }}>
-                                        Monday 9am Conditn Shift<br/>
-                                        Mon 18:00 Hyrox training<br/>
-                                        Tuesday 06:00 Strength workout<br/>
-                                        Wed 9:30am Work meeting
-                                    </div>
+                                <div className="modal-body">
+                                    <textarea
+                                        className="form-textarea"
+                                        placeholder="Monday 9am Conditn Shift&#10;Tue 18:00 Hyrox training&#10;Wednesday 06:00 Strength workout"
+                                        value={importText}
+                                        onChange={(e) => setImportText(e.target.value)}
+                                    />
                                 </div>
-
-                                <textarea
-                                    value={importText}
-                                    onChange={(e) => setImportText(e.target.value)}
-                                    placeholder="Paste your schedule here..."
-                                    style={{
-                                        width: '100%',
-                                        minHeight: '200px',
-                                        padding: '1rem',
-                                        borderRadius: '0.5rem',
-                                        border: '2px solid var(--color-border)',
-                                        fontFamily: 'inherit',
-                                        fontSize: '0.875rem',
-                                        resize: 'vertical'
-                                    }}
-                                />
-
                                 <div className="modal-footer">
-                                    <button 
-                                        className="btn btn-secondary"
-                                        onClick={() => {
-                                            setShowImportModal(false);
-                                            setImportText('');
-                                        }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button 
-                                        className="btn btn-primary"
-                                        onClick={handleTextImport}
-                                    >
-                                        Import Schedule
-                                    </button>
+                                    <button className="btn btn-secondary" onClick={() => setShowImportModal(false)}>Cancel</button>
+                                    <button className="btn btn-primary" onClick={handleTextImport}>Import</button>
                                 </div>
                             </div>
                         </div>
@@ -1296,11 +1156,7 @@
             );
         }
 
-        function App() {
-            return <DailyPlanner />;
-        }
-
-        ReactDOM.render(<App />, document.getElementById('root'));
+        ReactDOM.render(<DailyPlanner />, document.getElementById('root'));
     </script>
 </body>
 </html>

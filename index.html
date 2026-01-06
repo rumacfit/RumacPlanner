@@ -8,11 +8,6 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    
     <style>
         * {
             margin: 0;
@@ -522,20 +517,6 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // Initialize Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyBJ2wq0RE8dat-TFfD0Q",
-            authDomain: "weekly-planner-nutrition.firebaseapp.com",
-            projectId: "weekly-planner-nutrition",
-            storageBucket: "weekly-planner-nutrition.firebasestorage.app",
-            messagingSenderId: "148899775836",
-            appId: "1:148899775836:web:f8bd71204707dec99d9efe",
-            measurementId: "G-7JQ0RC8J1L"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
         // User Selection Component
         function UserSelection({ onSelectUser }) {
             const [selectedUser, setSelectedUser] = useState(null);
@@ -660,52 +641,34 @@
                 ...Object.fromEntries([0,2,3,4,5,6].map(i => [i, { events: [], tasks: [] }]))
             });
 
-            const [weekData, setWeekData] = useState(getDefaultWeekData());
-            const [loading, setLoading] = useState(true);
+            // Load data from localStorage
+            const loadUserData = (userId) => {
+                const saved = localStorage.getItem(`planner_${userId}`);
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+                // Return sample data for Macca on first load
+                if (userId === 'macca') {
+                    return getMaccaSampleData();
+                }
+                return getDefaultWeekData();
+            };
 
-            // Load data from Firestore
+            const [weekData, setWeekData] = useState(getDefaultWeekData());
+
+            // Load user data on login
             useEffect(() => {
                 if (currentUser) {
-                    setLoading(true);
-                    const unsubscribe = db.collection('dailyPlanner')
-                        .doc(currentUser)
-                        .onSnapshot((doc) => {
-                            if (doc.exists) {
-                                setWeekData(doc.data().weekData || getDefaultWeekData());
-                            } else {
-                                // Initialize with sample data for Macca
-                                const initialData = currentUser === 'macca' ? getMaccaSampleData() : getDefaultWeekData();
-                                setWeekData(initialData);
-                                // Save initial data to Firestore
-                                db.collection('dailyPlanner').doc(currentUser).set({
-                                    weekData: initialData,
-                                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                                });
-                            }
-                            setLoading(false);
-                        }, (error) => {
-                            console.error("Error loading data:", error);
-                            setLoading(false);
-                        });
-
-                    return () => unsubscribe();
+                    setWeekData(loadUserData(currentUser));
                 }
             }, [currentUser]);
 
-            // Save data to Firestore whenever weekData changes
+            // Save data to localStorage whenever weekData changes
             useEffect(() => {
-                if (currentUser && !loading) {
-                    db.collection('dailyPlanner')
-                        .doc(currentUser)
-                        .set({
-                            weekData: weekData,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true })
-                        .catch((error) => {
-                            console.error("Error saving data:", error);
-                        });
+                if (currentUser) {
+                    localStorage.setItem(`planner_${currentUser}`, JSON.stringify(weekData));
                 }
-            }, [weekData, currentUser, loading]);
+            }, [weekData, currentUser]);
 
             // If no user logged in, show user selection
             if (!currentUser) {
@@ -755,24 +718,6 @@
 
             const userName = currentUser === 'macca' ? 'Macca' : 'Ruby';
             const userEmoji = currentUser === 'macca' ? '💪' : '✨';
-
-            // Show loading state
-            if (loading) {
-                return (
-                    <div style={{
-                        minHeight: '100vh',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: 'var(--color-bg)'
-                    }}>
-                        <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⏳</div>
-                            <p style={{ color: 'var(--color-text-light)' }}>Loading your planner...</p>
-                        </div>
-                    </div>
-                );
-            }
 
             return (
                 <div className="app-container">

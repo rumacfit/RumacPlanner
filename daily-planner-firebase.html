@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Planner - Macca</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-bg: #fafaf9;
+            --color-surface: #ffffff;
+            --color-text: #1c1917;
+            --color-text-light: #78716c;
+            --color-border: #e7e5e4;
+            
+            --color-work: #0891b2;
+            --color-work-light: #ecfeff;
+            --color-training: #ea580c;
+            --color-training-light: #fff7ed;
+            --color-task: #7c3aed;
+            --color-task-light: #faf5ff;
+            --color-priority: #eab308;
+            --color-priority-light: #fefce8;
+            
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+        }
+
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--color-surface);
+            padding: 0.25rem;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .mode-toggle button {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: transparent;
+            color: var(--color-text-light);
+            font-weight: 500;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .mode-toggle button.active {
+            background: var(--color-text);
+            color: white;
+        }
+
+        /* Weekly Overview */
+        .weekly-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .import-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--color-text);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: var(--color-surface);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--color-bg);
+        }
+
+        .week-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1rem;
+        }
+
+        .day-card {
+            background: var(--color-surface);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .day-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .day-card.active {
+            border-color: var(--color-text);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .day-header {
+            margin-bottom: 1rem;
+        }
+
+        .day-name {
+            font-size: 0.875rem;
+            color: var(--color-text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .day-date {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-top: 0.25rem;
+        }
+
+        .day-badges {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .badge-work {
+            background: var(--color-work-light);
+            color: var(--color-work);
+        }
+
+        .badge-training {
+            background: var(--color-training-light);
+            color: var(--color-training);
+        }
+
+        .badge-tasks {
+            background: var(--color-task-light);
+            color: var(--color-task);
+        }
+
+        /* Daily Detail */
+        .daily-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .panel {
+            background: var(--color-surface);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--color-border);
+        }
+
+        .panel-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        /* Events & Schedule */
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .event-item {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid;
+        }
+
+        .event-item.work {
+            background: var(--color-work-light);
+            border-color: var(--color-work);
+        }
+
+        .event-item.training {
+            background: var(--color-training-light);
+            border-color: var(--color-training);
+        }
+
+        .event-time {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.875rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .event-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .event-detail {
+            font-size: 0.875rem;
+            color: var(--color-text-light);
+        }
+
+        /* Tasks */
+        .priority-section {
+            background: var(--color-priority-light);
+            border: 2px solid var(--color-priority);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .priority-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            color: var(--color-priority);
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+        }
+
+        .task-item:hover {
+            box-shadow: var(--shadow-sm);
+        }
+
+        .task-checkbox {
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid var(--color-border);
+            border-radius: 0.25rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-top: 0.125rem;
+        }
+
+        .task-checkbox.checked {
+            background: var(--color-task);
+            border-color: var(--color-task);
+            position: relative;
+        }
+
+        .task-checkbox.checked::after {
+            content: '✓';
+            position: absolute;
+            color: white;
+            font-size: 0.875rem;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .task-content {
+            flex: 1;
+        }
+
+        .task-title {
+            font-weight: 500;
+        }
+
+        .task-title.completed {
+            text-decoration: line-through;
+            color: var(--color-text-light);
+        }
+
+        .completed-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid var(--color-border);
+        }
+
+        .collapsed-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--color-text-light);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: background 0.2s;
+        }
+
+        .collapsed-header:hover {
+            background: var(--color-bg);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--color-text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        /* Add buttons */
+        .add-item-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--color-bg);
+            border: 2px dashed var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-light);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .add-item-btn:hover {
+            border-color: var(--color-text);
+            color: var(--color-text);
+            background: white;
+        }
+
+        /* Import Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--color-surface);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-description {
+            color: var(--color-text-light);
+        }
+
+        .upload-area {
+            border: 3px dashed var(--color-border);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 1rem;
+        }
+
+        .upload-area:hover {
+            border-color: var(--color-text);
+            background: var(--color-bg);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .week-days {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .week-days {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .daily-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBJ2wq0RE8dat-TFfD0Q",
+            authDomain: "weekly-planner-nutrition.firebaseapp.com",
+            projectId: "weekly-planner-nutrition",
+            storageBucket: "weekly-planner-nutrition.firebasestorage.app",
+            messagingSenderId: "148899775836",
+            appId: "1:148899775836:web:f8bd71204707dec99d9efe",
+            measurementId: "G-7JQ0RC8J1L"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // User Selection Component
+        function UserSelection({ onSelectUser }) {
+            const [selectedUser, setSelectedUser] = useState(null);
+
+            useEffect(() => {
+                // Check if user was previously logged in
+                const savedUser = localStorage.getItem('currentUser');
+                if (savedUser) {
+                    onSelectUser(savedUser);
+                }
+            }, []);
+
+            const users = [
+                { id: 'macca', name: 'Macca', emoji: '💪', color: '#0891b2' },
+                { id: 'ruby', name: 'Ruby', emoji: '✨', color: '#ea580c' }
+            ];
+
+            const handleLogin = () => {
+                if (selectedUser) {
+                    localStorage.setItem('currentUser', selectedUser);
+                    onSelectUser(selectedUser);
+                }
+            };
+
+            return (
+                <div style={{
+                    minHeight: '100vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'var(--color-bg)'
+                }}>
+                    <div style={{
+                        background: 'var(--color-surface)',
+                        padding: '3rem',
+                        borderRadius: '1rem',
+                        boxShadow: 'var(--shadow-lg)',
+                        maxWidth: '400px',
+                        width: '90%'
+                    }}>
+                        <h1 style={{ marginBottom: '0.5rem', fontSize: '2rem' }}>Daily Planner</h1>
+                        <p style={{ color: 'var(--color-text-light)', marginBottom: '2rem' }}>
+                            Select your account to continue
+                        </p>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {users.map(user => (
+                                <div
+                                    key={user.id}
+                                    onClick={() => setSelectedUser(user.id)}
+                                    style={{
+                                        padding: '1.5rem',
+                                        borderRadius: '0.75rem',
+                                        border: `3px solid ${selectedUser === user.id ? user.color : 'var(--color-border)'}`,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        background: selectedUser === user.id ? `${user.color}10` : 'white',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '1rem'
+                                    }}
+                                >
+                                    <span style={{ fontSize: '2rem' }}>{user.emoji}</span>
+                                    <span style={{ fontSize: '1.25rem', fontWeight: '600' }}>{user.name}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        <button
+                            className="btn btn-primary"
+                            onClick={handleLogin}
+                            disabled={!selectedUser}
+                            style={{
+                                width: '100%',
+                                marginTop: '1.5rem',
+                                opacity: selectedUser ? 1 : 0.5,
+                                cursor: selectedUser ? 'pointer' : 'not-allowed'
+                            }}
+                        >
+                            Continue
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        function DailyPlanner() {
+            const [currentUser, setCurrentUser] = useState(null);
+            const [mode, setMode] = useState('daily');
+            const [selectedDay, setSelectedDay] = useState(new Date().getDay());
+            const [showImportModal, setShowImportModal] = useState(false);
+            const [importType, setImportType] = useState(null);
+            const [showCompletedTasks, setShowCompletedTasks] = useState(false);
+
+            // Initialize default data structure
+            const getDefaultWeekData = () => ({
+            // Initialize default data structure
+            const getDefaultWeekData = () => ({
+                0: { events: [], tasks: [] },
+                1: { events: [], tasks: [] },
+                2: { events: [], tasks: [] },
+                3: { events: [], tasks: [] },
+                4: { events: [], tasks: [] },
+                5: { events: [], tasks: [] },
+                6: { events: [], tasks: [] }
+            });
+
+            // Sample data for Macca on first load
+            const getMaccaSampleData = () => ({
+                1: {
+                    events: [
+                        { id: Date.now() + 1, type: 'work', time: '09:00', title: 'Conditn Shift', detail: 'Studio Manager - Gladesville' },
+                        { id: Date.now() + 2, type: 'training', time: '18:00', title: 'Hyrox Conditioning', detail: '60min - Running intervals' }
+                    ],
+                    tasks: [
+                        { id: Date.now() + 3, title: 'Review week schedule with Ruby', completed: false, priority: true },
+                        { id: Date.now() + 4, title: 'Update Rumac Fit client meal plans', completed: false, priority: true },
+                        { id: Date.now() + 5, title: 'Check GoHighLevel webhook logs', completed: false, priority: true },
+                        { id: Date.now() + 6, title: 'Reply to Conditn member emails', completed: false, priority: false }
+                    ]
+                },
+                ...Object.fromEntries([0,2,3,4,5,6].map(i => [i, { events: [], tasks: [] }]))
+            });
+
+            const [weekData, setWeekData] = useState(getDefaultWeekData());
+            const [loading, setLoading] = useState(true);
+
+            // Load data from Firestore
+            useEffect(() => {
+                if (currentUser) {
+                    setLoading(true);
+                    const unsubscribe = db.collection('dailyPlanner')
+                        .doc(currentUser)
+                        .onSnapshot((doc) => {
+                            if (doc.exists) {
+                                setWeekData(doc.data().weekData || getDefaultWeekData());
+                            } else {
+                                // Initialize with sample data for Macca
+                                const initialData = currentUser === 'macca' ? getMaccaSampleData() : getDefaultWeekData();
+                                setWeekData(initialData);
+                                // Save initial data to Firestore
+                                db.collection('dailyPlanner').doc(currentUser).set({
+                                    weekData: initialData,
+                                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                                });
+                            }
+                            setLoading(false);
+                        }, (error) => {
+                            console.error("Error loading data:", error);
+                            setLoading(false);
+                        });
+
+                    return () => unsubscribe();
+                }
+            }, [currentUser]);
+
+            // Save data to Firestore whenever weekData changes
+            useEffect(() => {
+                if (currentUser && !loading) {
+                    db.collection('dailyPlanner')
+                        .doc(currentUser)
+                        .set({
+                            weekData: weekData,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true })
+                        .catch((error) => {
+                            console.error("Error saving data:", error);
+                        });
+                }
+            }, [weekData, currentUser, loading]);
+
+            // If no user logged in, show user selection
+            if (!currentUser) {
+                return <UserSelection onSelectUser={(userId) => {
+                    setCurrentUser(userId);
+                    setWeekData(loadUserData(userId));
+                }} />;
+            }
+
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const today = new Date();
+
+            const getDateForDay = (dayIndex) => {
+                const date = new Date(today);
+                const diff = dayIndex - today.getDay();
+                date.setDate(today.getDate() + diff);
+                return date.getDate();
+            };
+
+            const currentDayData = weekData[selectedDay] || { events: [], tasks: [] };
+            const priorityTasks = currentDayData.tasks.filter(t => t.priority && !t.completed);
+            const regularTasks = currentDayData.tasks.filter(t => !t.priority && !t.completed);
+            const completedTasks = currentDayData.tasks.filter(t => t.completed);
+
+            const openImportModal = (type) => {
+                setImportType(type);
+                setShowImportModal(true);
+            };
+
+            const toggleTaskComplete = (taskId) => {
+                setWeekData(prev => ({
+                    ...prev,
+                    [selectedDay]: {
+                        ...prev[selectedDay],
+                        tasks: prev[selectedDay].tasks.map(task =>
+                            task.id === taskId ? { ...task, completed: !task.completed } : task
+                        )
+                    }
+                }));
+            };
+
+            const handleLogout = () => {
+                localStorage.removeItem('currentUser');
+                setCurrentUser(null);
+                setWeekData(getDefaultWeekData());
+            };
+
+            const userName = currentUser === 'macca' ? 'Macca' : 'Ruby';
+            const userEmoji = currentUser === 'macca' ? '💪' : '✨';
+
+            // Show loading state
+            if (loading) {
+                return (
+                    <div style={{
+                        minHeight: '100vh',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'var(--color-bg)'
+                    }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⏳</div>
+                            <p style={{ color: 'var(--color-text-light)' }}>Loading your planner...</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="app-container">
+                    {/* Header */}
+                    <div className="header">
+                        <div>
+                            <h1>Daily Planner</h1>
+                            <p style={{ color: 'var(--color-text-light)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                                {userEmoji} Logged in as {userName}
+                            </p>
+                        </div>
+                        <div className="header-controls">
+                            <div className="mode-toggle">
+                                <button 
+                                    className={mode === 'daily' ? 'active' : ''}
+                                    onClick={() => setMode('daily')}
+                                >
+                                    Daily View
+                                </button>
+                                <button 
+                                    className={mode === 'planning' ? 'active' : ''}
+                                    onClick={() => setMode('planning')}
+                                >
+                                    Planning Mode
+                                </button>
+                            </div>
+                            <button 
+                                className="btn btn-secondary"
+                                onClick={handleLogout}
+                                style={{ fontSize: '0.875rem' }}
+                            >
+                                Switch User
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Weekly Overview */}
+                    <div className="weekly-section">
+                        <div className="section-header">
+                            <h2 className="section-title">Week Overview</h2>
+                            <div className="import-buttons">
+                                <button className="btn btn-secondary" onClick={() => openImportModal('roster')}>
+                                    📸 Import Roster
+                                </button>
+                                <button className="btn btn-secondary" onClick={() => openImportModal('training')}>
+                                    💪 Import Training
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="week-days">
+                            {dayNames.map((day, index) => {
+                                const dayData = weekData[index] || { events: [], tasks: [] };
+                                const workEvents = dayData.events.filter(e => e.type === 'work');
+                                const trainingEvents = dayData.events.filter(e => e.type === 'training');
+                                const incompleteTasks = dayData.tasks.filter(t => !t.completed).length;
+                                const isToday = index === today.getDay();
+
+                                return (
+                                    <div 
+                                        key={index}
+                                        className={`day-card ${selectedDay === index ? 'active' : ''}`}
+                                        onClick={() => setSelectedDay(index)}
+                                    >
+                                        <div className="day-header">
+                                            <div className="day-name">{day}</div>
+                                            <div className="day-date">{getDateForDay(index)}</div>
+                                        </div>
+                                        <div className="day-badges">
+                                            {workEvents.length > 0 && (
+                                                <div className="badge badge-work">
+                                                    💼 {workEvents.length} shift{workEvents.length > 1 ? 's' : ''}
+                                                </div>
+                                            )}
+                                            {trainingEvents.length > 0 && (
+                                                <div className="badge badge-training">
+                                                    🏃 {trainingEvents.length} workout{trainingEvents.length > 1 ? 's' : ''}
+                                                </div>
+                                            )}
+                                            {incompleteTasks > 0 && (
+                                                <div className="badge badge-tasks">
+                                                    ✓ {incompleteTasks} task{incompleteTasks > 1 ? 's' : ''}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Daily Detail */}
+                    <div className="daily-section">
+                        {/* Left: Events & Schedule */}
+                        <div className="panel">
+                            <div className="panel-header">
+                                <h3 className="panel-title">
+                                    {dayNames[selectedDay]}'s Schedule
+                                </h3>
+                                <button className="btn btn-secondary" style={{padding: '0.5rem 1rem', fontSize: '0.875rem'}}>
+                                    + Add Event
+                                </button>
+                            </div>
+
+                            {currentDayData.events.length > 0 ? (
+                                <div className="timeline">
+                                    {currentDayData.events.sort((a, b) => a.time.localeCompare(b.time)).map(event => (
+                                        <div key={event.id} className={`event-item ${event.type}`}>
+                                            <div className="event-time">{event.time}</div>
+                                            <div className="event-title">{event.title}</div>
+                                            <div className="event-detail">{event.detail}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="empty-state">
+                                    <div className="empty-state-icon">📅</div>
+                                    <p>No events scheduled for this day</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Right: Tasks */}
+                        <div className="panel">
+                            <div className="panel-header">
+                                <h3 className="panel-title">Tasks & Priorities</h3>
+                                <button className="btn btn-secondary" style={{padding: '0.5rem 1rem', fontSize: '0.875rem'}}>
+                                    + Add Task
+                                </button>
+                            </div>
+
+                            {/* Top 3 Priorities */}
+                            {priorityTasks.length > 0 && (
+                                <div className="priority-section">
+                                    <div className="priority-label">
+                                        ⭐ Top 3 Priorities
+                                    </div>
+                                    <div className="task-list">
+                                        {priorityTasks.map(task => (
+                                            <div key={task.id} className="task-item">
+                                                <div 
+                                                    className={`task-checkbox ${task.completed ? 'checked' : ''}`}
+                                                    onClick={() => toggleTaskComplete(task.id)}
+                                                />
+                                                <div className="task-content">
+                                                    <div className={`task-title ${task.completed ? 'completed' : ''}`}>
+                                                        {task.title}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Regular Tasks */}
+                            {regularTasks.length > 0 && (
+                                <div className="task-list">
+                                    {regularTasks.map(task => (
+                                        <div key={task.id} className="task-item">
+                                            <div 
+                                                className={`task-checkbox ${task.completed ? 'checked' : ''}`}
+                                                onClick={() => toggleTaskComplete(task.id)}
+                                            />
+                                            <div className="task-content">
+                                                <div className={`task-title ${task.completed ? 'completed' : ''}`}>
+                                                    {task.title}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {priorityTasks.length === 0 && regularTasks.length === 0 && (
+                                <div className="empty-state">
+                                    <div className="empty-state-icon">✓</div>
+                                    <p>No tasks for this day</p>
+                                </div>
+                            )}
+
+                            {/* Completed Tasks */}
+                            {completedTasks.length > 0 && (
+                                <div className="completed-section">
+                                    <div 
+                                        className="collapsed-header"
+                                        onClick={() => setShowCompletedTasks(!showCompletedTasks)}
+                                    >
+                                        <span>{showCompletedTasks ? '▼' : '▶'}</span>
+                                        <span>Completed ({completedTasks.length})</span>
+                                    </div>
+                                    {showCompletedTasks && (
+                                        <div className="task-list" style={{marginTop: '0.75rem'}}>
+                                            {completedTasks.map(task => (
+                                                <div key={task.id} className="task-item">
+                                                    <div 
+                                                        className="task-checkbox checked"
+                                                        onClick={() => toggleTaskComplete(task.id)}
+                                                    />
+                                                    <div className="task-content">
+                                                        <div className="task-title completed">
+                                                            {task.title}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Import Modal */}
+                    {showImportModal && (
+                        <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
+                            <div className="modal" onClick={e => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h3 className="modal-title">
+                                        {importType === 'roster' ? 'Import Roster' : 'Import Training Plan'}
+                                    </h3>
+                                    <p className="modal-description">
+                                        {importType === 'roster' 
+                                            ? 'Upload a screenshot of your work roster and Claude will automatically add your shifts to the calendar.'
+                                            : 'Upload your training plan and Claude will add simplified workout details to your schedule.'}
+                                    </p>
+                                </div>
+
+                                <div className="upload-area">
+                                    <div className="upload-icon">📸</div>
+                                    <p><strong>Click to upload</strong> or drag and drop</p>
+                                    <p style={{fontSize: '0.875rem', color: 'var(--color-text-light)', marginTop: '0.5rem'}}>
+                                        PNG, JPG or PDF (Max 10MB)
+                                    </p>
+                                </div>
+
+                                <div style={{
+                                    background: 'var(--color-bg)',
+                                    padding: '1rem',
+                                    borderRadius: '0.5rem',
+                                    fontSize: '0.875rem',
+                                    color: 'var(--color-text-light)'
+                                }}>
+                                    <strong>💡 Note:</strong> This feature will use Claude's API to process images. 
+                                    Expected cost: ~$0.10 per import.
+                                </div>
+
+                                <div className="modal-footer">
+                                    <button 
+                                        className="btn btn-secondary"
+                                        onClick={() => setShowImportModal(false)}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button className="btn btn-primary">
+                                        Process with Claude
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function App() {
+            return <DailyPlanner />;
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

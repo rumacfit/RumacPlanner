@@ -8,6 +8,11 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Firebase SDK - Realtime Database -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -517,6 +522,21 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        // Initialize Firebase with Realtime Database
+        const firebaseConfig = {
+            apiKey: "AIzaSyBJ2wq0RE8dat-TFfD0Q",
+            authDomain: "weekly-planner-nutrition.firebaseapp.com",
+            databaseURL: "https://planning-hub-cd875-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "weekly-planner-nutrition",
+            storageBucket: "weekly-planner-nutrition.firebasestorage.app",
+            messagingSenderId: "148899775836",
+            appId: "1:148899775836:web:f8bd71204707dec99d9efe",
+            measurementId: "G-7JQ0RC8J1L"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
         // User Selection Component
         function UserSelection({ onSelectUser }) {
             const [selectedUser, setSelectedUser] = useState(null);
@@ -613,8 +633,6 @@
 
             // Initialize default data structure
             const getDefaultWeekData = () => ({
-            // Initialize default data structure
-            const getDefaultWeekData = () => ({
                 0: { events: [], tasks: [] },
                 1: { events: [], tasks: [] },
                 2: { events: [], tasks: [] },
@@ -655,20 +673,42 @@
             };
 
             const [weekData, setWeekData] = useState(getDefaultWeekData());
+            const [loading, setLoading] = useState(true);
 
-            // Load user data on login
+            // Load user data from Firebase on login
             useEffect(() => {
                 if (currentUser) {
-                    setWeekData(loadUserData(currentUser));
+                    setLoading(true);
+                    const userRef = database.ref(`dailyPlanner/${currentUser}`);
+                    
+                    // Listen for data changes
+                    userRef.on('value', (snapshot) => {
+                        const data = snapshot.val();
+                        if (data && data.weekData) {
+                            setWeekData(data.weekData);
+                        } else {
+                            // Initialize with sample data for Macca
+                            const initialData = currentUser === 'macca' ? getMaccaSampleData() : getDefaultWeekData();
+                            setWeekData(initialData);
+                            userRef.set({ weekData: initialData });
+                        }
+                        setLoading(false);
+                    });
+
+                    // Cleanup listener on unmount
+                    return () => userRef.off();
                 }
             }, [currentUser]);
 
-            // Save data to localStorage whenever weekData changes
+            // Save data to Firebase whenever weekData changes
             useEffect(() => {
-                if (currentUser) {
-                    localStorage.setItem(`planner_${currentUser}`, JSON.stringify(weekData));
+                if (currentUser && !loading && weekData) {
+                    database.ref(`dailyPlanner/${currentUser}`).set({
+                        weekData: weekData,
+                        updatedAt: firebase.database.ServerValue.TIMESTAMP
+                    });
                 }
-            }, [weekData, currentUser]);
+            }, [weekData, currentUser, loading]);
 
             // If no user logged in, show user selection
             if (!currentUser) {
@@ -718,6 +758,24 @@
 
             const userName = currentUser === 'macca' ? 'Macca' : 'Ruby';
             const userEmoji = currentUser === 'macca' ? '💪' : '✨';
+
+            // Show loading state while Firebase loads data
+            if (loading) {
+                return (
+                    <div style={{
+                        minHeight: '100vh',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'var(--color-bg)'
+                    }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⏳</div>
+                            <p style={{ color: 'var(--color-text-light)' }}>Loading your planner...</p>
+                        </div>
+                    </div>
+                );
+            }
 
             return (
                 <div className="app-container">

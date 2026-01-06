@@ -54,13 +54,15 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
         }
 
         .header h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            letter-spacing: -0.025em;
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: -0.015em;
         }
 
         .header-controls {
@@ -295,11 +297,9 @@
 
         /* Tasks */
         .priority-section {
-            background: var(--color-priority-light);
-            border: 2px solid var(--color-priority);
-            border-radius: 0.5rem;
-            padding: 1rem;
             margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--color-border);
         }
 
         .priority-label {
@@ -307,7 +307,7 @@
             align-items: center;
             gap: 0.5rem;
             font-weight: 700;
-            color: var(--color-priority);
+            color: var(--color-text);
             margin-bottom: 0.75rem;
             font-size: 0.875rem;
             text-transform: uppercase;
@@ -517,99 +517,27 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // User Selection Component
-        function UserSelection({ onSelectUser }) {
-            const [selectedUser, setSelectedUser] = useState(null);
-
-            useEffect(() => {
-                // Check if user was previously logged in
-                const savedUser = localStorage.getItem('currentUser');
-                if (savedUser) {
-                    onSelectUser(savedUser);
-                }
-            }, []);
-
-            const users = [
-                { id: 'macca', name: 'Macca', emoji: '💪', color: '#0891b2' },
-                { id: 'ruby', name: 'Ruby', emoji: '✨', color: '#ea580c' }
-            ];
-
-            const handleLogin = () => {
-                if (selectedUser) {
-                    localStorage.setItem('currentUser', selectedUser);
-                    onSelectUser(selectedUser);
-                }
-            };
-
-            return (
-                <div style={{
-                    minHeight: '100vh',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'var(--color-bg)'
-                }}>
-                    <div style={{
-                        background: 'var(--color-surface)',
-                        padding: '3rem',
-                        borderRadius: '1rem',
-                        boxShadow: 'var(--shadow-lg)',
-                        maxWidth: '400px',
-                        width: '90%'
-                    }}>
-                        <h1 style={{ marginBottom: '0.5rem', fontSize: '2rem' }}>Daily Planner</h1>
-                        <p style={{ color: 'var(--color-text-light)', marginBottom: '2rem' }}>
-                            Select your account to continue
-                        </p>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {users.map(user => (
-                                <div
-                                    key={user.id}
-                                    onClick={() => setSelectedUser(user.id)}
-                                    style={{
-                                        padding: '1.5rem',
-                                        borderRadius: '0.75rem',
-                                        border: `3px solid ${selectedUser === user.id ? user.color : 'var(--color-border)'}`,
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        background: selectedUser === user.id ? `${user.color}10` : 'white',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '1rem'
-                                    }}
-                                >
-                                    <span style={{ fontSize: '2rem' }}>{user.emoji}</span>
-                                    <span style={{ fontSize: '1.25rem', fontWeight: '600' }}>{user.name}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <button
-                            className="btn btn-primary"
-                            onClick={handleLogin}
-                            disabled={!selectedUser}
-                            style={{
-                                width: '100%',
-                                marginTop: '1.5rem',
-                                opacity: selectedUser ? 1 : 0.5,
-                                cursor: selectedUser ? 'pointer' : 'not-allowed'
-                            }}
-                        >
-                            Continue
-                        </button>
-                    </div>
-                </div>
-            );
-        }
-
         function DailyPlanner() {
-            const [currentUser, setCurrentUser] = useState(null);
-            const [mode, setMode] = useState('daily');
-            const [selectedDay, setSelectedDay] = useState(new Date().getDay());
+            const [currentUser, setCurrentUser] = useState(() => {
+                return localStorage.getItem('currentUser') || 'macca';
+            });
+            const [mode, setMode] = useState('daily'); // daily, monthly, yearly, clients
+            
+            // Initialize with today's index (Monday-based)
+            const getTodayIndex = () => {
+                const jsDay = new Date().getDay();
+                return jsDay === 0 ? 6 : jsDay - 1;
+            };
+            
+            const [selectedDay, setSelectedDay] = useState(getTodayIndex());
             const [showImportModal, setShowImportModal] = useState(false);
             const [importType, setImportType] = useState(null);
             const [showCompletedTasks, setShowCompletedTasks] = useState(false);
+            const [importText, setImportText] = useState('');
+            const [showAddEventModal, setShowAddEventModal] = useState(false);
+            const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+            const [newEvent, setNewEvent] = useState({ time: '', title: '', detail: '', type: 'work' });
+            const [newTask, setNewTask] = useState({ title: '', priority: false });
 
             // Initialize default data structure
             const getDefaultWeekData = () => ({
@@ -654,6 +582,35 @@
 
             const [weekData, setWeekData] = useState(getDefaultWeekData());
 
+            // Client tracker data
+            const getDefaultClientData = () => ({
+                clients: []
+            });
+
+            const loadClientData = (userId) => {
+                const saved = localStorage.getItem(`clients_${userId}`);
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+                return getDefaultClientData();
+            };
+
+            const [clientData, setClientData] = useState(getDefaultClientData());
+
+            // Load client data on user change
+            useEffect(() => {
+                if (currentUser) {
+                    setClientData(loadClientData(currentUser));
+                }
+            }, [currentUser]);
+
+            // Save client data
+            useEffect(() => {
+                if (currentUser) {
+                    localStorage.setItem(`clients_${currentUser}`, JSON.stringify(clientData));
+                }
+            }, [clientData, currentUser]);
+
             // Load user data on login
             useEffect(() => {
                 if (currentUser) {
@@ -668,25 +625,30 @@
                 }
             }, [weekData, currentUser]);
 
-            // If no user logged in, show user selection
-            if (!currentUser) {
-                return <UserSelection onSelectUser={(userId) => {
-                    setCurrentUser(userId);
-                    setWeekData(loadUserData(userId));
-                }} />;
-            }
-
-            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            // Week starts on Monday
+            const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
             const today = new Date();
 
-            const getDateForDay = (dayIndex) => {
+            // Convert day index: 0=Mon, 1=Tue, ... 6=Sun
+            const getTodayIndex = () => {
+                const jsDay = today.getDay(); // 0=Sun, 1=Mon, ... 6=Sat
+                return jsDay === 0 ? 6 : jsDay - 1; // Convert to 0=Mon, 6=Sun
+            };
+
+            const getDateForDay = (displayIndex) => {
                 const date = new Date(today);
-                const diff = dayIndex - today.getDay();
+                const currentDayIndex = getTodayIndex();
+                const diff = displayIndex - currentDayIndex;
                 date.setDate(today.getDate() + diff);
                 return date.getDate();
             };
 
-            const currentDayData = weekData[selectedDay] || { events: [], tasks: [] };
+            // Map display index (0=Mon) to data index (0=Sun, 1=Mon)
+            const getDataIndex = (displayIndex) => {
+                return displayIndex === 6 ? 0 : displayIndex + 1;
+            };
+
+            const currentDayData = weekData[getDataIndex(selectedDay)] || { events: [], tasks: [] };
             const priorityTasks = currentDayData.tasks.filter(t => t.priority && !t.completed);
             const regularTasks = currentDayData.tasks.filter(t => !t.priority && !t.completed);
             const completedTasks = currentDayData.tasks.filter(t => t.completed);
@@ -696,108 +658,225 @@
                 setShowImportModal(true);
             };
 
-            const toggleTaskComplete = (taskId) => {
+            const handleTextImport = () => {
+                if (!importText.trim()) return;
+
+                const lines = importText.trim().split('\n');
+                const newData = { ...weekData };
+
+                lines.forEach(line => {
+                    const trimmed = line.trim();
+                    if (!trimmed) return;
+
+                    // Parse format: "Monday 9am Conditn Shift" or "Mon 18:00 Hyrox training"
+                    const dayMatch = trimmed.match(/^(mon|tue|wed|thu|fri|sat|sun)/i);
+                    if (!dayMatch) return;
+
+                    const dayName = dayMatch[1].toLowerCase();
+                    const dayIndex = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].indexOf(dayName.substring(0, 3));
+                    if (dayIndex === -1) return;
+
+                    const dataIndex = dayIndex === 6 ? 0 : dayIndex + 1;
+
+                    // Extract time (supports 9am, 9:00, 18:00, etc)
+                    const timeMatch = trimmed.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+                    if (!timeMatch) return;
+
+                    let hour = parseInt(timeMatch[1]);
+                    const minute = timeMatch[2] || '00';
+                    const meridian = timeMatch[3];
+
+                    if (meridian) {
+                        if (meridian.toLowerCase() === 'pm' && hour < 12) hour += 12;
+                        if (meridian.toLowerCase() === 'am' && hour === 12) hour = 0;
+                    }
+
+                    const time = `${hour.toString().padStart(2, '0')}:${minute}`;
+
+                    // Get the rest as title/detail
+                    const rest = trimmed.substring(dayMatch[0].length + (timeMatch[0].length || 0)).trim();
+                    const title = rest || 'Event';
+
+                    // Determine type based on keywords
+                    const lowerRest = rest.toLowerCase();
+                    const type = lowerRest.includes('shift') || lowerRest.includes('work') || lowerRest.includes('conditn') 
+                        ? 'work' 
+                        : 'training';
+
+                    // Add event
+                    if (!newData[dataIndex].events) {
+                        newData[dataIndex].events = [];
+                    }
+
+                    newData[dataIndex].events.push({
+                        id: Date.now() + Math.random(),
+                        type: type,
+                        time: time,
+                        title: title,
+                        detail: ''
+                    });
+                });
+
+                setWeekData(newData);
+                setImportText('');
+                setShowImportModal(false);
+            };
+
+            const handleAddEvent = () => {
+                if (!newEvent.time || !newEvent.title) return;
+
+                const dataIndex = getDataIndex(selectedDay);
                 setWeekData(prev => ({
                     ...prev,
-                    [selectedDay]: {
-                        ...prev[selectedDay],
-                        tasks: prev[selectedDay].tasks.map(task =>
+                    [dataIndex]: {
+                        ...prev[dataIndex],
+                        events: [...(prev[dataIndex].events || []), {
+                            id: Date.now(),
+                            ...newEvent
+                        }]
+                    }
+                }));
+
+                setNewEvent({ time: '', title: '', detail: '', type: 'work' });
+                setShowAddEventModal(false);
+            };
+
+            const handleAddTask = () => {
+                if (!newTask.title) return;
+
+                const dataIndex = getDataIndex(selectedDay);
+                setWeekData(prev => ({
+                    ...prev,
+                    [dataIndex]: {
+                        ...prev[dataIndex],
+                        tasks: [...(prev[dataIndex].tasks || []), {
+                            id: Date.now(),
+                            title: newTask.title,
+                            completed: false,
+                            priority: newTask.priority
+                        }]
+                    }
+                }));
+
+                setNewTask({ title: '', priority: false });
+                setShowAddTaskModal(false);
+            };
+
+            const toggleTaskComplete = (taskId) => {
+                const dataIndex = getDataIndex(selectedDay);
+                setWeekData(prev => ({
+                    ...prev,
+                    [dataIndex]: {
+                        ...prev[dataIndex],
+                        tasks: prev[dataIndex].tasks.map(task =>
                             task.id === taskId ? { ...task, completed: !task.completed } : task
                         )
                     }
                 }));
             };
 
-            const handleLogout = () => {
-                localStorage.removeItem('currentUser');
-                setCurrentUser(null);
-                setWeekData(getDefaultWeekData());
-            };
-
-            const userName = currentUser === 'macca' ? 'Macca' : 'Ruby';
-            const userEmoji = currentUser === 'macca' ? '💪' : '✨';
-
             return (
                 <div className="app-container">
                     {/* Header */}
                     <div className="header">
-                        <div>
-                            <h1>Daily Planner</h1>
-                            <p style={{ color: 'var(--color-text-light)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-                                {userEmoji} Logged in as {userName}
-                            </p>
+                        <div className="mode-toggle">
+                            <button 
+                                className={mode === 'daily' ? 'active' : ''}
+                                onClick={() => setMode('daily')}
+                            >
+                                Daily
+                            </button>
+                            <button 
+                                className={mode === 'monthly' ? 'active' : ''}
+                                onClick={() => setMode('monthly')}
+                            >
+                                Monthly
+                            </button>
+                            <button 
+                                className={mode === 'yearly' ? 'active' : ''}
+                                onClick={() => setMode('yearly')}
+                            >
+                                Yearly
+                            </button>
+                            <button 
+                                className={mode === 'clients' ? 'active' : ''}
+                                onClick={() => setMode('clients')}
+                            >
+                                Client Tracker
+                            </button>
                         </div>
                         <div className="header-controls">
                             <div className="mode-toggle">
                                 <button 
-                                    className={mode === 'daily' ? 'active' : ''}
-                                    onClick={() => setMode('daily')}
+                                    className={currentUser === 'macca' ? 'active' : ''}
+                                    onClick={() => {
+                                        setCurrentUser('macca');
+                                        localStorage.setItem('currentUser', 'macca');
+                                    }}
                                 >
-                                    Daily View
+                                    Macca
                                 </button>
                                 <button 
-                                    className={mode === 'planning' ? 'active' : ''}
-                                    onClick={() => setMode('planning')}
+                                    className={currentUser === 'ruby' ? 'active' : ''}
+                                    onClick={() => {
+                                        setCurrentUser('ruby');
+                                        localStorage.setItem('currentUser', 'ruby');
+                                    }}
                                 >
-                                    Planning Mode
+                                    Ruby
                                 </button>
                             </div>
-                            <button 
-                                className="btn btn-secondary"
-                                onClick={handleLogout}
-                                style={{ fontSize: '0.875rem' }}
-                            >
-                                Switch User
-                            </button>
                         </div>
                     </div>
+
+                    {/* Content based on mode */}
+                    {mode === 'daily' && (
+                        <>
 
                     {/* Weekly Overview */}
                     <div className="weekly-section">
                         <div className="section-header">
                             <h2 className="section-title">Week Overview</h2>
                             <div className="import-buttons">
-                                <button className="btn btn-secondary" onClick={() => openImportModal('roster')}>
-                                    📸 Import Roster
-                                </button>
-                                <button className="btn btn-secondary" onClick={() => openImportModal('training')}>
-                                    💪 Import Training
+                                <button className="btn btn-secondary" onClick={() => openImportModal('text')}>
+                                    Import Schedule
                                 </button>
                             </div>
                         </div>
 
                         <div className="week-days">
-                            {dayNames.map((day, index) => {
-                                const dayData = weekData[index] || { events: [], tasks: [] };
+                            {dayNames.map((day, displayIndex) => {
+                                const dataIndex = getDataIndex(displayIndex);
+                                const dayData = weekData[dataIndex] || { events: [], tasks: [] };
                                 const workEvents = dayData.events.filter(e => e.type === 'work');
                                 const trainingEvents = dayData.events.filter(e => e.type === 'training');
                                 const incompleteTasks = dayData.tasks.filter(t => !t.completed).length;
-                                const isToday = index === today.getDay();
+                                const isToday = displayIndex === getTodayIndex();
 
                                 return (
                                     <div 
-                                        key={index}
-                                        className={`day-card ${selectedDay === index ? 'active' : ''}`}
-                                        onClick={() => setSelectedDay(index)}
+                                        key={displayIndex}
+                                        className={`day-card ${selectedDay === displayIndex ? 'active' : ''}`}
+                                        onClick={() => setSelectedDay(displayIndex)}
                                     >
                                         <div className="day-header">
                                             <div className="day-name">{day}</div>
-                                            <div className="day-date">{getDateForDay(index)}</div>
+                                            <div className="day-date">{getDateForDay(displayIndex)}</div>
                                         </div>
                                         <div className="day-badges">
                                             {workEvents.length > 0 && (
                                                 <div className="badge badge-work">
-                                                    💼 {workEvents.length} shift{workEvents.length > 1 ? 's' : ''}
+                                                    {workEvents.length} shift{workEvents.length > 1 ? 's' : ''}
                                                 </div>
                                             )}
                                             {trainingEvents.length > 0 && (
                                                 <div className="badge badge-training">
-                                                    🏃 {trainingEvents.length} workout{trainingEvents.length > 1 ? 's' : ''}
+                                                    {trainingEvents.length} workout{trainingEvents.length > 1 ? 's' : ''}
                                                 </div>
                                             )}
                                             {incompleteTasks > 0 && (
                                                 <div className="badge badge-tasks">
-                                                    ✓ {incompleteTasks} task{incompleteTasks > 1 ? 's' : ''}
+                                                    {incompleteTasks} task{incompleteTasks > 1 ? 's' : ''}
                                                 </div>
                                             )}
                                         </div>
@@ -815,7 +894,11 @@
                                 <h3 className="panel-title">
                                     {dayNames[selectedDay]}'s Schedule
                                 </h3>
-                                <button className="btn btn-secondary" style={{padding: '0.5rem 1rem', fontSize: '0.875rem'}}>
+                                <button 
+                                    className="btn btn-secondary" 
+                                    style={{padding: '0.5rem 1rem', fontSize: '0.875rem'}}
+                                    onClick={() => setShowAddEventModal(true)}
+                                >
                                     + Add Event
                                 </button>
                             </div>
@@ -832,7 +915,6 @@
                                 </div>
                             ) : (
                                 <div className="empty-state">
-                                    <div className="empty-state-icon">📅</div>
                                     <p>No events scheduled for this day</p>
                                 </div>
                             )}
@@ -842,7 +924,11 @@
                         <div className="panel">
                             <div className="panel-header">
                                 <h3 className="panel-title">Tasks & Priorities</h3>
-                                <button className="btn btn-secondary" style={{padding: '0.5rem 1rem', fontSize: '0.875rem'}}>
+                                <button 
+                                    className="btn btn-secondary" 
+                                    style={{padding: '0.5rem 1rem', fontSize: '0.875rem'}}
+                                    onClick={() => setShowAddTaskModal(true)}
+                                >
                                     + Add Task
                                 </button>
                             </div>
@@ -851,7 +937,7 @@
                             {priorityTasks.length > 0 && (
                                 <div className="priority-section">
                                     <div className="priority-label">
-                                        ⭐ Top 3 Priorities
+                                        Top 3 Priorities
                                     </div>
                                     <div className="task-list">
                                         {priorityTasks.map(task => (
@@ -928,50 +1014,279 @@
                             )}
                         </div>
                     </div>
+                    </>
+                    )}
+
+                    {/* Monthly View */}
+                    {mode === 'monthly' && (
+                        <div style={{textAlign: 'center', padding: '3rem', color: 'var(--color-text-light)'}}>
+                            <p>Monthly view - Coming soon</p>
+                        </div>
+                    )}
+
+                    {/* Yearly View */}
+                    {mode === 'yearly' && (
+                        <div style={{textAlign: 'center', padding: '3rem', color: 'var(--color-text-light)'}}>
+                            <p>Yearly view - Coming soon</p>
+                        </div>
+                    )}
+
+                    {/* Client Tracker View */}
+                    {mode === 'clients' && (
+                        <div style={{marginTop: '1rem'}}>
+                            <div className="section-header">
+                                <h2 className="section-title">Client Tracker - 4 Week Test ($29)</h2>
+                                <button className="btn btn-primary" onClick={() => {
+                                    const name = prompt('Client name:');
+                                    if (name) {
+                                        setClientData(prev => ({
+                                            clients: [...prev.clients, {
+                                                id: Date.now(),
+                                                name: name,
+                                                startDate: new Date().toISOString(),
+                                                week: 1,
+                                                status: 'active'
+                                            }]
+                                        }));
+                                    }
+                                }}>
+                                    + Add Client
+                                </button>
+                            </div>
+
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginTop: '1.5rem'}}>
+                                {[1,2,3,4].map(week => {
+                                    const weekClients = clientData.clients.filter(c => c.week === week && c.status === 'active');
+                                    return (
+                                        <div key={week} style={{
+                                            background: 'var(--color-surface)',
+                                            borderRadius: '0.75rem',
+                                            boxShadow: 'var(--shadow-sm)',
+                                            minHeight: '300px'
+                                        }}>
+                                            <div style={{
+                                                padding: '1rem',
+                                                background: 'var(--color-bg)',
+                                                borderTopLeftRadius: '0.75rem',
+                                                borderTopRightRadius: '0.75rem',
+                                                borderBottom: '2px solid var(--color-border)',
+                                                fontWeight: '600',
+                                                fontSize: '0.875rem',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.05em'
+                                            }}>
+                                                Week {week}
+                                            </div>
+                                            <div style={{padding: '1rem'}}>
+                                                {weekClients.length > 0 ? (
+                                                    <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
+                                                        {weekClients.map(client => (
+                                                            <div key={client.id} style={{
+                                                                padding: '0.75rem',
+                                                                background: 'var(--color-work-light)',
+                                                                borderRadius: '0.375rem',
+                                                                borderLeft: '3px solid var(--color-work)',
+                                                                display: 'flex',
+                                                                justifyContent: 'space-between',
+                                                                alignItems: 'center'
+                                                            }}>
+                                                                <span style={{fontWeight: '500', fontSize: '0.875rem'}}>{client.name}</span>
+                                                                <div style={{display: 'flex', gap: '0.25rem'}}>
+                                                                    {week < 4 && (
+                                                                        <button 
+                                                                            className="btn btn-secondary"
+                                                                            style={{
+                                                                                padding: '0.25rem 0.5rem',
+                                                                                fontSize: '0.75rem',
+                                                                                minWidth: 'auto'
+                                                                            }}
+                                                                            onClick={() => {
+                                                                                setClientData(prev => ({
+                                                                                    clients: prev.clients.map(c => 
+                                                                                        c.id === client.id ? {...c, week: c.week + 1} : c
+                                                                                    )
+                                                                                }));
+                                                                            }}
+                                                                            title="Move to next week"
+                                                                        >
+                                                                            →
+                                                                        </button>
+                                                                    )}
+                                                                    <button 
+                                                                        className="btn btn-secondary"
+                                                                        style={{
+                                                                            padding: '0.25rem 0.5rem',
+                                                                            fontSize: '0.75rem',
+                                                                            minWidth: 'auto',
+                                                                            background: 'var(--color-text-light)',
+                                                                            color: 'white'
+                                                                        }}
+                                                                        onClick={() => {
+                                                                            if (confirm(`Remove ${client.name}?`)) {
+                                                                                setClientData(prev => ({
+                                                                                    clients: prev.clients.filter(c => c.id !== client.id)
+                                                                                }));
+                                                                            }
+                                                                        }}
+                                                                        title="Remove client"
+                                                                    >
+                                                                        ×
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div style={{textAlign: 'center', padding: '2rem', color: 'var(--color-text-light)', fontSize: '0.875rem'}}>
+                                                        No clients
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Add Event Modal */}
+                    {showAddEventModal && (
+                        <div className="modal-overlay" onClick={() => setShowAddEventModal(false)}>
+                            <div className="modal" onClick={e => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h3 className="modal-title">Add Event</h3>
+                                </div>
+                                <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
+                                    <input
+                                        type="time"
+                                        value={newEvent.time}
+                                        onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
+                                        style={{padding: '0.75rem', borderRadius: '0.375rem', border: '2px solid var(--color-border)', fontSize: '0.875rem', fontFamily: 'inherit'}}
+                                    />
+                                    <input
+                                        type="text"
+                                        value={newEvent.title}
+                                        onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
+                                        placeholder="Event title"
+                                        style={{padding: '0.75rem', borderRadius: '0.375rem', border: '2px solid var(--color-border)', fontSize: '0.875rem', fontFamily: 'inherit'}}
+                                    />
+                                    <input
+                                        type="text"
+                                        value={newEvent.detail}
+                                        onChange={(e) => setNewEvent({...newEvent, detail: e.target.value})}
+                                        placeholder="Details (optional)"
+                                        style={{padding: '0.75rem', borderRadius: '0.375rem', border: '2px solid var(--color-border)', fontSize: '0.875rem', fontFamily: 'inherit'}}
+                                    />
+                                    <select
+                                        value={newEvent.type}
+                                        onChange={(e) => setNewEvent({...newEvent, type: e.target.value})}
+                                        style={{padding: '0.75rem', borderRadius: '0.375rem', border: '2px solid var(--color-border)', fontSize: '0.875rem', fontFamily: 'inherit'}}
+                                    >
+                                        <option value="work">Work</option>
+                                        <option value="training">Training</option>
+                                    </select>
+                                </div>
+                                <div className="modal-footer">
+                                    <button className="btn btn-secondary" onClick={() => setShowAddEventModal(false)}>Cancel</button>
+                                    <button className="btn btn-primary" onClick={handleAddEvent}>Add Event</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Add Task Modal */}
+                    {showAddTaskModal && (
+                        <div className="modal-overlay" onClick={() => setShowAddTaskModal(false)}>
+                            <div className="modal" onClick={e => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h3 className="modal-title">Add Task</h3>
+                                </div>
+                                <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
+                                    <input
+                                        type="text"
+                                        value={newTask.title}
+                                        onChange={(e) => setNewTask({...newTask, title: e.target.value})}
+                                        placeholder="Task description"
+                                        style={{padding: '0.75rem', borderRadius: '0.375rem', border: '2px solid var(--color-border)', fontSize: '0.875rem', fontFamily: 'inherit'}}
+                                    />
+                                    <label style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'}}>
+                                        <input
+                                            type="checkbox"
+                                            checked={newTask.priority}
+                                            onChange={(e) => setNewTask({...newTask, priority: e.target.checked})}
+                                        />
+                                        <span>Mark as priority</span>
+                                    </label>
+                                </div>
+                                <div className="modal-footer">
+                                    <button className="btn btn-secondary" onClick={() => setShowAddTaskModal(false)}>Cancel</button>
+                                    <button className="btn btn-primary" onClick={handleAddTask}>Add Task</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Import Modal */}
                     {showImportModal && (
                         <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
                             <div className="modal" onClick={e => e.stopPropagation()}>
                                 <div className="modal-header">
-                                    <h3 className="modal-title">
-                                        {importType === 'roster' ? 'Import Roster' : 'Import Training Plan'}
-                                    </h3>
+                                    <h3 className="modal-title">Import Schedule</h3>
                                     <p className="modal-description">
-                                        {importType === 'roster' 
-                                            ? 'Upload a screenshot of your work roster and Claude will automatically add your shifts to the calendar.'
-                                            : 'Upload your training plan and Claude will add simplified workout details to your schedule.'}
+                                        Paste your schedule below. Each line should start with a day and time, followed by the event details.
                                     </p>
                                 </div>
 
-                                <div className="upload-area">
-                                    <div className="upload-icon">📸</div>
-                                    <p><strong>Click to upload</strong> or drag and drop</p>
-                                    <p style={{fontSize: '0.875rem', color: 'var(--color-text-light)', marginTop: '0.5rem'}}>
-                                        PNG, JPG or PDF (Max 10MB)
+                                <div style={{marginBottom: '1rem'}}>
+                                    <p style={{fontSize: '0.875rem', color: 'var(--color-text-light)', marginBottom: '0.5rem'}}>
+                                        <strong>Format examples:</strong>
                                     </p>
+                                    <div style={{
+                                        background: 'var(--color-bg)',
+                                        padding: '0.75rem',
+                                        borderRadius: '0.5rem',
+                                        fontSize: '0.875rem',
+                                        fontFamily: 'monospace',
+                                        color: 'var(--color-text-light)'
+                                    }}>
+                                        Monday 9am Conditn Shift<br/>
+                                        Mon 18:00 Hyrox training<br/>
+                                        Tuesday 06:00 Strength workout<br/>
+                                        Wed 9:30am Work meeting
+                                    </div>
                                 </div>
 
-                                <div style={{
-                                    background: 'var(--color-bg)',
-                                    padding: '1rem',
-                                    borderRadius: '0.5rem',
-                                    fontSize: '0.875rem',
-                                    color: 'var(--color-text-light)'
-                                }}>
-                                    <strong>💡 Note:</strong> This feature will use Claude's API to process images. 
-                                    Expected cost: ~$0.10 per import.
-                                </div>
+                                <textarea
+                                    value={importText}
+                                    onChange={(e) => setImportText(e.target.value)}
+                                    placeholder="Paste your schedule here..."
+                                    style={{
+                                        width: '100%',
+                                        minHeight: '200px',
+                                        padding: '1rem',
+                                        borderRadius: '0.5rem',
+                                        border: '2px solid var(--color-border)',
+                                        fontFamily: 'inherit',
+                                        fontSize: '0.875rem',
+                                        resize: 'vertical'
+                                    }}
+                                />
 
                                 <div className="modal-footer">
                                     <button 
                                         className="btn btn-secondary"
-                                        onClick={() => setShowImportModal(false)}
+                                        onClick={() => {
+                                            setShowImportModal(false);
+                                            setImportText('');
+                                        }}
                                     >
                                         Cancel
                                     </button>
-                                    <button className="btn btn-primary">
-                                        Process with Claude
+                                    <button 
+                                        className="btn btn-primary"
+                                        onClick={handleTextImport}
+                                    >
+                                        Import Schedule
                                     </button>
                                 </div>
                             </div>

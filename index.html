@@ -1023,8 +1023,20 @@
             
             // Training & Macros tracker (universal data)
             const [weeklyTraining, setWeeklyTraining] = useState(() => {
-                const saved = localStorage.getItem('weekly_training');
-                return saved ? JSON.parse(saved) : {
+                try {
+                    const saved = localStorage.getItem('weekly_training');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        // Validate structure
+                        if (parsed && typeof parsed === 'object') {
+                            return parsed;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error loading training data:', e);
+                }
+                // Default structure
+                return {
                     0: { training: '', calories: '', protein: '', carbs: '', fat: '' },
                     1: { training: '', calories: '', protein: '', carbs: '', fat: '' },
                     2: { training: '', calories: '', protein: '', carbs: '', fat: '' },
@@ -1656,7 +1668,8 @@
                                 </div>
                             </div>
 
-                            {/* WEEKLY TRAINING & MACROS TRACKER */}
+                            {/* WEEKLY TRAINING & MACROS TRACKER - TEMPORARILY DISABLED FOR TESTING */}
+                            {false && (
                             <div style={{
                                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                                 borderRadius: '1rem',
@@ -1765,6 +1778,7 @@
                                     })}
                                 </div>
                             </div>
+                            )}
 
                             <div className="week-grid">
                                 {dayNames.map((day, displayIndex) => {
@@ -2710,13 +2724,13 @@
                         </div>
                     )}
 
-                    {/* TRAINING & MACROS MODAL */}
-                    {showTrainingModal && (
+                    {/* TRAINING & MACROS MODAL - TEMPORARILY DISABLED FOR TESTING */}
+                    {false && showTrainingModal && (
                         <div className="modal-overlay" onClick={() => setShowTrainingModal(false)}>
                             <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '600px'}}>
                                 <div className="modal-header">
                                     <h3 className="modal-title">
-                                        {dayNames[Object.keys(weeklyTraining).findIndex(key => parseInt(key) === trainingDayIndex)]}'s Training & Nutrition
+                                        Training & Nutrition
                                     </h3>
                                     <button className="modal-close" onClick={() => setShowTrainingModal(false)}>×</button>
                                 </div>

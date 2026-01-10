@@ -1021,34 +1021,6 @@
             const [editingEvent, setEditingEvent] = useState(null);
             const [editingTask, setEditingTask] = useState(null);
             
-            // Training & Macros tracker (universal data)
-            const [weeklyTraining, setWeeklyTraining] = useState(() => {
-                try {
-                    const saved = localStorage.getItem('weekly_training');
-                    if (saved) {
-                        const parsed = JSON.parse(saved);
-                        // Validate structure
-                        if (parsed && typeof parsed === 'object') {
-                            return parsed;
-                        }
-                    }
-                } catch (e) {
-                    console.error('Error loading training data:', e);
-                }
-                // Default structure
-                return {
-                    0: { training: '', calories: '', protein: '', carbs: '', fat: '' },
-                    1: { training: '', calories: '', protein: '', carbs: '', fat: '' },
-                    2: { training: '', calories: '', protein: '', carbs: '', fat: '' },
-                    3: { training: '', calories: '', protein: '', carbs: '', fat: '' },
-                    4: { training: '', calories: '', protein: '', carbs: '', fat: '' },
-                    5: { training: '', calories: '', protein: '', carbs: '', fat: '' },
-                    6: { training: '', calories: '', protein: '', carbs: '', fat: '' }
-                };
-            });
-            const [showTrainingModal, setShowTrainingModal] = useState(false);
-            const [trainingDayIndex, setTrainingDayIndex] = useState(0);
-            
             // Calendar event modal
             const [showCalendarEventModal, setShowCalendarEventModal] = useState(false);
             const [newCalendarEvent, setNewCalendarEvent] = useState({
@@ -1128,16 +1100,6 @@
                         }
                     })
                     .catch(err => console.error('Load calendar error:', err));
-                
-                database.ref('universal/training').once('value')
-                    .then(snapshot => {
-                        if (snapshot.exists()) {
-                            const data = snapshot.val();
-                            setWeeklyTraining(data);
-                            localStorage.setItem('weekly_training', JSON.stringify(data));
-                        }
-                    })
-                    .catch(err => console.error('Load training error:', err));
             }, []); // Only on mount
             
             // Auto-calculate client weeks based on start date (for display purposes)
@@ -1194,12 +1156,6 @@
                 // Sync to Firebase
                 database.ref('universal/calendar').set(calendarData).catch(err => console.error('Calendar sync error:', err));
             }, [calendarData]);
-
-            useEffect(() => {
-                localStorage.setItem('weekly_training', JSON.stringify(weeklyTraining));
-                // Sync to Firebase
-                database.ref('universal/training').set(weeklyTraining).catch(err => console.error('Training sync error:', err));
-            }, [weeklyTraining]);
 
             // Load data on user change
             useEffect(() => {
@@ -1667,118 +1623,6 @@
                                     </button>
                                 </div>
                             </div>
-
-                            {/* WEEKLY TRAINING & MACROS TRACKER - TEMPORARILY DISABLED FOR TESTING */}
-                            {false && (
-                            <div style={{
-                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                borderRadius: '1rem',
-                                padding: '1.5rem',
-                                marginBottom: '1.5rem',
-                                color: 'white'
-                            }}>
-                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
-                                    <h3 style={{fontSize: '1.125rem', fontWeight: '700', margin: 0}}>
-                                        📋 Weekly Training & Nutrition
-                                    </h3>
-                                </div>
-                                
-                                <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(7, 1fr)',
-                                    gap: '0.75rem'
-                                }}>
-                                    {dayNames.map((day, displayIndex) => {
-                                        const dataIdx = getDataIndex(displayIndex);
-                                        const dayTraining = weeklyTraining[dataIdx] || { training: '', calories: '', protein: '', carbs: '', fat: '' };
-                                        const hasData = dayTraining.training || dayTraining.calories;
-                                        
-                                        return (
-                                            <div
-                                                key={displayIndex}
-                                                onClick={() => {
-                                                    setTrainingDayIndex(dataIdx);
-                                                    setShowTrainingModal(true);
-                                                }}
-                                                style={{
-                                                    background: hasData ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)',
-                                                    borderRadius: '0.75rem',
-                                                    padding: '0.875rem',
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.15s',
-                                                    border: '2px solid',
-                                                    borderColor: hasData ? 'rgba(255, 255, 255, 0.4)' : 'transparent',
-                                                    minHeight: '140px',
-                                                    display: 'flex',
-                                                    flexDirection: 'column'
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
-                                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.background = hasData ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)';
-                                                    e.currentTarget.style.transform = 'translateY(0)';
-                                                }}
-                                            >
-                                                <div style={{
-                                                    fontWeight: '700',
-                                                    fontSize: '0.875rem',
-                                                    marginBottom: '0.5rem',
-                                                    opacity: 0.95
-                                                }}>
-                                                    {day.substring(0, 3)}
-                                                </div>
-                                                
-                                                {hasData ? (
-                                                    <>
-                                                        {dayTraining.training && (
-                                                            <div style={{
-                                                                fontSize: '0.75rem',
-                                                                marginBottom: '0.5rem',
-                                                                lineHeight: '1.3',
-                                                                opacity: 0.9,
-                                                                whiteSpace: 'pre-wrap',
-                                                                flex: 1
-                                                            }}>
-                                                                {dayTraining.training.length > 45 
-                                                                    ? dayTraining.training.substring(0, 45) + '...' 
-                                                                    : dayTraining.training}
-                                                            </div>
-                                                        )}
-                                                        {dayTraining.calories && (
-                                                            <div style={{
-                                                                fontSize: '0.75rem',
-                                                                fontWeight: '600',
-                                                                background: 'rgba(255, 255, 255, 0.2)',
-                                                                padding: '0.25rem 0.5rem',
-                                                                borderRadius: '0.25rem',
-                                                                marginTop: 'auto'
-                                                            }}>
-                                                                {dayTraining.calories} cal
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    <div style={{
-                                                        fontSize: '0.75rem',
-                                                        opacity: 0.6,
-                                                        fontStyle: 'italic',
-                                                        textAlign: 'center',
-                                                        flex: 1,
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center'
-                                                    }}>
-                                                        + Add training
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                            )}
 
                             <div className="week-grid">
                                 {dayNames.map((day, displayIndex) => {
@@ -2384,7 +2228,7 @@
                     )}
 
                     {/* Add Event Modal */}
-                    {/* ADD EVENT MODAL - BEAUTIFUL REDESIGN */}
+                    {/* ADD EVENT MODAL - SIMPLE VERSION */}
                     {showAddEventModal && (
                         <div className="modal-overlay" onClick={() => {
                             setShowAddEventModal(false);
@@ -2400,149 +2244,83 @@
                                 </div>
                                 
                                 <div className="modal-body">
-                                    <div style={{display: 'flex', flexDirection: 'column', gap: '1.25rem'}}>
-                                        {/* Event Title */}
-                                        <div>
-                                            <label style={{
-                                                display: 'block',
-                                                fontSize: '0.875rem',
-                                                fontWeight: '600',
-                                                color: '#374151',
-                                                marginBottom: '0.5rem'
-                                            }}>Event Title</label>
-                                            <input
-                                                type="text"
-                                                className="form-input"
-                                                placeholder="e.g., Conditn Morning Shift"
-                                                value={newEvent.title}
-                                                onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
-                                                autoFocus
-                                            />
-                                        </div>
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Event Title</label>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            placeholder="Event title"
+                                            value={newEvent.title}
+                                            onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
+                                        />
+                                    </div>
 
-                                        {/* Time Range */}
-                                        <div>
-                                            <label style={{
-                                                display: 'block',
-                                                fontSize: '0.875rem',
-                                                fontWeight: '600',
-                                                color: '#374151',
-                                                marginBottom: '0.5rem'
-                                            }}>Time</label>
-                                            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem'}}>
-                                                <div>
-                                                    <label style={{fontSize: '0.75rem', color: '#6B7280', marginBottom: '0.375rem', display: 'block'}}>
-                                                        Start Time
-                                                    </label>
-                                                    <input
-                                                        type="time"
-                                                        className="form-input"
-                                                        value={newEvent.startTime}
-                                                        onChange={(e) => setNewEvent({...newEvent, startTime: e.target.value})}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label style={{fontSize: '0.75rem', color: '#6B7280', marginBottom: '0.375rem', display: 'block'}}>
-                                                        End Time (optional)
-                                                    </label>
-                                                    <input
-                                                        type="time"
-                                                        className="form-input"
-                                                        value={newEvent.endTime}
-                                                        onChange={(e) => setNewEvent({...newEvent, endTime: e.target.value})}
-                                                    />
-                                                </div>
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Time</label>
+                                        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem'}}>
+                                            <div>
+                                                <label style={{fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem', display: 'block'}}>Start Time</label>
+                                                <input
+                                                    type="time"
+                                                    className="form-input"
+                                                    value={newEvent.startTime}
+                                                    onChange={(e) => setNewEvent({...newEvent, startTime: e.target.value})}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem', display: 'block'}}>End Time</label>
+                                                <input
+                                                    type="time"
+                                                    className="form-input"
+                                                    value={newEvent.endTime}
+                                                    onChange={(e) => setNewEvent({...newEvent, endTime: e.target.value})}
+                                                />
                                             </div>
                                         </div>
+                                    </div>
 
-                                        {/* Color Picker */}
-                                        <div>
-                                            <label style={{
-                                                display: 'block',
-                                                fontSize: '0.875rem',
-                                                fontWeight: '600',
-                                                color: '#374151',
-                                                marginBottom: '0.5rem'
-                                            }}>Color</label>
-                                            <div style={{
-                                                display: 'grid',
-                                                gridTemplateColumns: 'repeat(6, 1fr)',
-                                                gap: '0.5rem'
-                                            }}>
-                                                {colorOptions.map(opt => (
-                                                    <button
-                                                        key={opt.color}
-                                                        type="button"
-                                                        onClick={() => setNewEvent({...newEvent, color: opt.color})}
-                                                        style={{
-                                                            width: '100%',
-                                                            aspectRatio: '1',
-                                                            borderRadius: '0.5rem',
-                                                            border: newEvent.color === opt.color ? '3px solid #111827' : '2px solid #E5E7EB',
-                                                            background: opt.color,
-                                                            cursor: 'pointer',
-                                                            transition: 'all 0.15s',
-                                                            boxShadow: newEvent.color === opt.color ? '0 4px 6px -1px rgb(0 0 0 / 0.1)' : 'none'
-                                                        }}
-                                                        title={opt.name}
-                                                    />
-                                                ))}
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Color</label>
+                                        <div className="color-picker">
+                                            {colorOptions.map(opt => (
+                                                <div
+                                                    key={opt.color}
+                                                    className={`color-option ${newEvent.color === opt.color ? 'selected' : ''}`}
+                                                    style={{backgroundColor: opt.color}}
+                                                    onClick={() => setNewEvent({...newEvent, color: opt.color})}
+                                                    title={opt.name}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Details</label>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            placeholder="Additional details"
+                                            value={newEvent.detail}
+                                            onChange={(e) => setNewEvent({...newEvent, detail: e.target.value})}
+                                        />
+                                    </div>
+
+                                    <div className="modal-section">
+                                        <label className="modal-section-title">Assign To</label>
+                                        <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
+                                            <div 
+                                                className={`user-option ${newEvent.assignedTo.includes('macca') ? 'selected' : ''}`}
+                                                onClick={() => toggleEventUserAssignment('macca')}
+                                            >
+                                                <div className="user-avatar macca">M</div>
+                                                <span className="user-name">Macca</span>
                                             </div>
-                                        </div>
-
-                                        {/* Details */}
-                                        <div>
-                                            <label style={{
-                                                display: 'block',
-                                                fontSize: '0.875rem',
-                                                fontWeight: '600',
-                                                color: '#374151',
-                                                marginBottom: '0.5rem'
-                                            }}>Details (optional)</label>
-                                            <textarea
-                                                className="form-textarea"
-                                                placeholder="Add any additional details..."
-                                                value={newEvent.detail}
-                                                onChange={(e) => setNewEvent({...newEvent, detail: e.target.value})}
-                                                rows={3}
-                                                style={{minHeight: '80px'}}
-                                            />
-                                        </div>
-
-                                        {/* Assign To */}
-                                        <div>
-                                            <label style={{
-                                                display: 'block',
-                                                fontSize: '0.875rem',
-                                                fontWeight: '600',
-                                                color: '#374151',
-                                                marginBottom: '0.5rem'
-                                            }}>Assign To</label>
-                                            <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                                                <button
-                                                    type="button"
-                                                    className={`user-option ${newEvent.assignedTo.includes('macca') ? 'selected' : ''}`}
-                                                    onClick={() => toggleEventUserAssignment('macca')}
-                                                    style={{
-                                                        border: newEvent.assignedTo.includes('macca') ? '2px solid #0891b2' : '2px solid #E5E7EB',
-                                                        background: newEvent.assignedTo.includes('macca') ? '#ECFEFF' : 'white'
-                                                    }}
-                                                >
-                                                    <div className="user-avatar macca">M</div>
-                                                    <span className="user-name">Macca</span>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className={`user-option ${newEvent.assignedTo.includes('ruby') ? 'selected' : ''}`}
-                                                    onClick={() => toggleEventUserAssignment('ruby')}
-                                                    style={{
-                                                        border: newEvent.assignedTo.includes('ruby') ? '2px solid #ea580c' : '2px solid #E5E7EB',
-                                                        background: newEvent.assignedTo.includes('ruby') ? '#FFF7ED' : 'white'
-                                                    }}
-                                                >
-                                                    <div className="user-avatar ruby">R</div>
-                                                    <span className="user-name">Ruby</span>
-                                                </button>
+                                            <div 
+                                                className={`user-option ${newEvent.assignedTo.includes('ruby') ? 'selected' : ''}`}
+                                                onClick={() => toggleEventUserAssignment('ruby')}
+                                            >
+                                                <div className="user-avatar ruby">R</div>
+                                                <span className="user-name">Ruby</span>
                                             </div>
                                         </div>
                                     </div>
@@ -2551,25 +2329,17 @@
                                 <div className="modal-footer">
                                     {editingEvent && (
                                         <button 
-                                            className="btn" 
-                                            style={{
-                                                marginRight: 'auto',
-                                                background: '#EF4444',
-                                                color: 'white',
-                                                border: 'none'
-                                            }}
+                                            className="btn btn-secondary" 
+                                            style={{marginRight: 'auto', background: '#ef4444', color: 'white'}}
                                             onClick={() => handleDeleteEvent(editingEvent.id)}
                                         >
                                             Delete
                                         </button>
                                     )}
-                                    <button 
-                                        className="btn btn-secondary" 
-                                        onClick={() => {
-                                            setShowAddEventModal(false);
-                                            setEditingEvent(null);
-                                        }}
-                                    >
+                                    <button className="btn btn-secondary" onClick={() => {
+                                        setShowAddEventModal(false);
+                                        setEditingEvent(null);
+                                    }}>
                                         Cancel
                                     </button>
                                     <button className="btn btn-primary" onClick={handleAddEvent}>
@@ -2718,179 +2488,6 @@
                                     </button>
                                     <button className="btn btn-primary" onClick={handleAddTask}>
                                         {editingTask ? 'Save Changes' : 'Add Task'}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* TRAINING & MACROS MODAL - TEMPORARILY DISABLED FOR TESTING */}
-                    {false && showTrainingModal && (
-                        <div className="modal-overlay" onClick={() => setShowTrainingModal(false)}>
-                            <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: '600px'}}>
-                                <div className="modal-header">
-                                    <h3 className="modal-title">
-                                        Training & Nutrition
-                                    </h3>
-                                    <button className="modal-close" onClick={() => setShowTrainingModal(false)}>×</button>
-                                </div>
-                                
-                                <div className="modal-body">
-                                    <div style={{display: 'flex', flexDirection: 'column', gap: '1.25rem'}}>
-                                        {/* Training Plan */}
-                                        <div>
-                                            <label style={{
-                                                display: 'block',
-                                                fontSize: '0.875rem',
-                                                fontWeight: '600',
-                                                color: '#374151',
-                                                marginBottom: '0.5rem'
-                                            }}>Training Plan</label>
-                                            <textarea
-                                                className="form-textarea"
-                                                placeholder={`e.g., 
-MED:
-60 minute run
-8 x 100 strides
-
-Performance:
-4 rounds
-7 min Bike / Ski / Row
-into - 150m farmers & 35 wall balls`}
-                                                value={weeklyTraining[trainingDayIndex]?.training || ''}
-                                                onChange={(e) => setWeeklyTraining({
-                                                    ...weeklyTraining,
-                                                    [trainingDayIndex]: {
-                                                        ...weeklyTraining[trainingDayIndex],
-                                                        training: e.target.value
-                                                    }
-                                                })}
-                                                rows={8}
-                                                style={{
-                                                    minHeight: '200px',
-                                                    fontFamily: 'monospace',
-                                                    fontSize: '0.875rem'
-                                                }}
-                                                autoFocus
-                                            />
-                                        </div>
-
-                                        {/* Calories */}
-                                        <div>
-                                            <label style={{
-                                                display: 'block',
-                                                fontSize: '0.875rem',
-                                                fontWeight: '600',
-                                                color: '#374151',
-                                                marginBottom: '0.5rem'
-                                            }}>Target Calories</label>
-                                            <input
-                                                type="text"
-                                                className="form-input"
-                                                placeholder="e.g., 2500"
-                                                value={weeklyTraining[trainingDayIndex]?.calories || ''}
-                                                onChange={(e) => setWeeklyTraining({
-                                                    ...weeklyTraining,
-                                                    [trainingDayIndex]: {
-                                                        ...weeklyTraining[trainingDayIndex],
-                                                        calories: e.target.value
-                                                    }
-                                                })}
-                                            />
-                                        </div>
-
-                                        {/* Macros Grid */}
-                                        <div>
-                                            <label style={{
-                                                display: 'block',
-                                                fontSize: '0.875rem',
-                                                fontWeight: '600',
-                                                color: '#374151',
-                                                marginBottom: '0.5rem'
-                                            }}>Macros (optional)</label>
-                                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem'}}>
-                                                <div>
-                                                    <label style={{fontSize: '0.75rem', color: '#6B7280', marginBottom: '0.375rem', display: 'block'}}>
-                                                        Protein (g)
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        className="form-input"
-                                                        placeholder="180"
-                                                        value={weeklyTraining[trainingDayIndex]?.protein || ''}
-                                                        onChange={(e) => setWeeklyTraining({
-                                                            ...weeklyTraining,
-                                                            [trainingDayIndex]: {
-                                                                ...weeklyTraining[trainingDayIndex],
-                                                                protein: e.target.value
-                                                            }
-                                                        })}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label style={{fontSize: '0.75rem', color: '#6B7280', marginBottom: '0.375rem', display: 'block'}}>
-                                                        Carbs (g)
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        className="form-input"
-                                                        placeholder="250"
-                                                        value={weeklyTraining[trainingDayIndex]?.carbs || ''}
-                                                        onChange={(e) => setWeeklyTraining({
-                                                            ...weeklyTraining,
-                                                            [trainingDayIndex]: {
-                                                                ...weeklyTraining[trainingDayIndex],
-                                                                carbs: e.target.value
-                                                            }
-                                                        })}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label style={{fontSize: '0.75rem', color: '#6B7280', marginBottom: '0.375rem', display: 'block'}}>
-                                                        Fat (g)
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        className="form-input"
-                                                        placeholder="80"
-                                                        value={weeklyTraining[trainingDayIndex]?.fat || ''}
-                                                        onChange={(e) => setWeeklyTraining({
-                                                            ...weeklyTraining,
-                                                            [trainingDayIndex]: {
-                                                                ...weeklyTraining[trainingDayIndex],
-                                                                fat: e.target.value
-                                                            }
-                                                        })}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div className="modal-footer">
-                                    <button 
-                                        className="btn" 
-                                        style={{
-                                            marginRight: 'auto',
-                                            background: 'transparent',
-                                            color: '#EF4444',
-                                            border: '1.5px solid #EF4444'
-                                        }}
-                                        onClick={() => {
-                                            setWeeklyTraining({
-                                                ...weeklyTraining,
-                                                [trainingDayIndex]: { training: '', calories: '', protein: '', carbs: '', fat: '' }
-                                            });
-                                        }}
-                                    >
-                                        Clear
-                                    </button>
-                                    <button 
-                                        className="btn btn-primary" 
-                                        onClick={() => setShowTrainingModal(false)}
-                                    >
-                                        Save
                                     </button>
                                 </div>
                             </div>
